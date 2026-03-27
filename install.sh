@@ -27,13 +27,13 @@ apt-get install -y wget curl jq net-tools iproute2 cron ca-certificates iptables
 echo -e "\n${MAGENTA}======================================================${NC}"
 echo -e "${WHITE}${BOLD}      VERIFICACIÓN DE LICENCIA PREMIUM${NC}"
 echo -e "${MAGENTA}======================================================${NC}"
-echo -e -n "${CYAN}🔑 Ingrese su Key de Instalación (Ej. KRAKER-ABC123): ${NC}"
-read INSTALL_KEY
+# echo -e -n "${CYAN}🔑 Ingrese su Key de Instalación (Ej. KRAKER-ABC123): ${NC}"
+# read INSTALL_KEY
 
-if [ -z "$INSTALL_KEY" ]; then
-    echo -e "${RED}[x] Debe ingresar una licencia válida. Instalación abortada.${NC}"
-    exit 1
-fi
+# if [ -z "$INSTALL_KEY" ]; then
+#     echo -e "${RED}[x] Debe ingresar una licencia válida. Instalación abortada.${NC}"
+#     exit 1
+# fi
 
 echo -e "${YELLOW}⏳ Verificando licencia con el servidor central...${NC}"
 # Reemplaza IP_DE_TU_BOT con la IP donde corras tu Bot de Telegram
