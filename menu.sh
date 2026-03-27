@@ -141,15 +141,28 @@ function optimizer_menu() {
 # ============== PARTE 3: INSTALACIÓN DE SERVICIOS ==============
 function install_dropbear() {
     echo -e "\n${CYAN}[*] Instalando Dropbear (SSH Ligero para Juegos)...${NC}"
+    
+    # Detener servicios HTTP por defecto (Apache) que vienen en AWS Ubuntu preinstalados, bloqueando el puerto 80 de Dropbear
+    systemctl stop apache2 > /dev/null 2>&1
+    systemctl disable apache2 > /dev/null 2>&1
+    
     apt-get update -y > /dev/null 2>&1
     apt-get install -y dropbear > /dev/null 2>&1
     
-    # Configurar puertos (ej: 80 y 143) y permitir root
-    sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear
-    sed -i 's/DROPBEAR_PORT=22/DROPBEAR_PORT=80/g' /etc/default/dropbear
-    sed -i 's/DROPBEAR_EXTRA_ARGS=.*/DROPBEAR_EXTRA_ARGS="-p 143 -p 109"/g' /etc/default/dropbear
+    # Sobrescribir la configuración directamente (Evita problemas de sintaxis con "sed" en Ubuntu 24)
+    cat > /etc/default/dropbear <<EOF
+NO_START=0
+DROPBEAR_PORT=80
+DROPBEAR_EXTRA_ARGS="-p 143 -p 109"
+DROPBEAR_BANNER=""
+DROPBEAR_RECEIVE_WINDOW=65536
+EOF
     
-    service dropbear restart > /dev/null 2>&1
+    # Forzar el reinicio nativo por systemctl
+    systemctl daemon-reload > /dev/null 2>&1
+    systemctl enable dropbear > /dev/null 2>&1
+    systemctl restart dropbear > /dev/null 2>&1
+    
     echo -e "${GREEN}[✔] Dropbear instalado exitosamente (Puertos: 80, 143, 109).${NC}"
     sleep 3
     services_menu
@@ -160,13 +173,14 @@ function install_stunnel() {
     apt-get update -y > /dev/null 2>&1
     apt-get install -y stunnel4 > /dev/null 2>&1
     
-    # Crear certificado SSL genérico (necesario para Stunnel)
+    # Crear certificado SSL genérico (necesario para levantar Stunnel)
     openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
       -subj "/C=US/ST=Gaming/L=Server/O=VPS/CN=gamingVPS" \
       -keyout /etc/stunnel/stunnel.pem -out /etc/stunnel/stunnel.pem > /dev/null 2>&1
       
-    # Configurar stunnel.conf con TCP_NODELAY para reducir latencia interna
+    # Configurar stunnel.conf agregando el PID local obligatorio para OS modernos
     cat > /etc/stunnel/stunnel.conf <<EOF
+pid = /var/run/stunnel.pid
 cert = /etc/stunnel/stunnel.pem
 client = no
 socket = a:SO_REUSEADDR=1
@@ -178,8 +192,12 @@ accept = 443
 connect = 127.0.0.1:80
 EOF
     
-    sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
-    service stunnel4 restart > /dev/null 2>&1
+    # Habilitar en default por compatibilidad legacy y luego forzar con systemd (Ubuntu 24.04+ rule)
+    sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4 2>/dev/null
+    systemctl daemon-reload > /dev/null 2>&1
+    systemctl enable stunnel4 > /dev/null 2>&1
+    systemctl restart stunnel4 > /dev/null 2>&1
+    
     echo -e "${GREEN}[✔] Stunnel configurado. (Puerto SSL 443 -> Redirigido a Puerto 80).${NC}"
     sleep 3
     services_menu
