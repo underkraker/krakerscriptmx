@@ -996,6 +996,60 @@ function security_menu() {
 }
 # =========================================================
 
+# ============== PARTE 7: ACTUALIZACIÓN Y DESINSTALACIÓN ==============
+function update_script() {
+    header
+    echo -e "\n   ${MAGENTA}❖${NC} ${WHITE}${BOLD}A C T U A L I Z A R   S C R I P T${NC} ${MAGENTA}❖${NC}\n"
+    echo -e "   ${YELLOW}⏳ Buscando actualizaciones en GitHub...${NC}"
+    
+    wget -qO /tmp/menu_temp.sh "https://raw.githubusercontent.com/underkraker/scriptgamer/main/menu.sh?t=$(date +%s)"
+    
+    if [ -f /tmp/menu_temp.sh ] && grep -q "Gaming VPS Script" /tmp/menu_temp.sh; then
+        mv /tmp/menu_temp.sh /usr/bin/menu
+        chmod +x /usr/bin/menu
+        echo -e "\n   ${GREEN}[✔] ¡Script actualizado con éxito!${NC}"
+        echo -e "   ${CYAN}Reiniciando panel...${NC}"
+        sleep 2
+        menu
+        exit 0
+    else
+        echo -e "\n   ${RED}[x] Error al descargar la actualización. Revisa el link de github.${NC}"
+        rm -f /tmp/menu_temp.sh
+        sleep 3
+    fi
+}
+
+function uninstall_script() {
+    header
+    echo -e "\n   ${MAGENTA}❖${NC} ${WHITE}${BOLD}D E S I N S T A L A R   S C R I P T${NC} ${MAGENTA}❖${NC}\n"
+    echo -e "   ${RED}⚠️  ¡ADVERTENCIA! Esta acción borrará el script, usuarios SSH y configuraciones.${NC}"
+    echo -e -n "   ${WHITE}¿Estás completamente seguro de desinstalar? (S/N):${NC} "
+    read resp
+    
+    if [[ "$resp" == "S" || "$resp" == "s" ]]; then
+        echo -e "\n   ${YELLOW}⏳ Eliminando usuarios registrados...${NC}"
+        for user in $(ls /etc/gaming_vps/*.limit 2>/dev/null | sed 's/.*\///;s/\.limit//'); do
+            pkill -u "$user" >/dev/null 2>&1
+            userdel --force "$user" >/dev/null 2>&1
+        done
+        
+        echo -e "   ${YELLOW}⏳ Limpiando cronjobs y archivos base...${NC}"
+        sed -i '/autokill.sh/d' /etc/crontab 2>/dev/null
+        sed -i '/drop_caches/d' /etc/crontab 2>/dev/null
+        service cron reload > /dev/null 2>&1
+        
+        rm -rf /etc/gaming_vps 2>/dev/null
+        rm -f /usr/bin/menu 2>/dev/null
+        
+        echo -e "\n   ${GREEN}[✔] Script desinstalado correctamente. ¡Adios!${NC}"
+        exit 0
+    else
+        echo -e "\n   ${CYAN}Operación cancelada.${NC}"
+        sleep 2
+    fi
+}
+# =========================================================
+
 # Función para mostrar el panel principal
 function main_menu() {
     while true; do
@@ -1006,6 +1060,8 @@ function main_menu() {
         echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}⚙️  Instalador de Protocolos y Túneles${NC}"
         echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}📊 Monitor de Recursos (RAM/CPU/Ping)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}🛡️  Módulo de Seguridad y Anti-Abusos${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 98 ${CYAN}]${NC} ${BOLD}🔄 Actualizar Script${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 99 ${CYAN}]${NC} ${BOLD}🗑️  Desinstalar Script${NC}"
         echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}❌ Cerrar Sesión${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
@@ -1027,6 +1083,12 @@ function main_menu() {
                 ;;
             5)
                 security_menu
+                ;;
+            98)
+                update_script
+                ;;
+            99)
+                uninstall_script
                 ;;
             0)
                 clear
