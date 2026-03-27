@@ -1092,6 +1092,7 @@ function main_menu() {
         
         echo "$ACTIVOS" | grep -q ":443 " && PUERTOS+="443(Xray) "
         echo "$ACTIVOS" | grep -q ":444 " && PUERTOS+="444(SSL) "
+        echo "$ACTIVOS" | grep -q ":445 " && PUERTOS+="445(WS+SSL) "
         echo "$ACTIVOS" | grep -q ":8888 " && PUERTOS+="8888(WS) "
         echo "$ACTIVOS" | grep -q ":7300 " && PUERTOS+="7300(VPN) "
         echo "$ACTIVOS" | grep -q ":51820 " && PUERTOS+="51820(WG)"
