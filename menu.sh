@@ -30,7 +30,15 @@ function header() {
     echo -e "   ${MAGENTA}╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗██║  ██║${NC}"
     echo -e "    ${MAGENTA}╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝${NC}"
     echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "         ${WHITE}${BOLD}🔥  V P S   P A N E L   P R O  🔥${NC}"
+    
+    if [ -f /etc/gaming_vps/slogan.txt ]; then
+        M_SLOGAN=$(cat /etc/gaming_vps/slogan.txt)
+        # Centrar de forma simple usando espacios aproximados
+        echo -e "         ${WHITE}${BOLD}🔥  $M_SLOGAN  🔥${NC}"
+    else
+        echo -e "         ${WHITE}${BOLD}🔥  V P S   P A N E L   P R O  🔥${NC}"
+    fi
+    
     echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "     ${GREEN}⚡ Ping Optimizer    🛡️ Anti-DDoS    🦇 Multi-Tunnel${NC}"
     echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
