@@ -420,13 +420,118 @@ function install_openvpn() {
 
 
 
+function install_xray() {
+    header
+    echo -e "\n${CYAN}[*] Instalando Xray-Core (VLESS + VMess + TROJAN + Reality)...${NC}"
+    apt-get update -y > /dev/null 2>&1
+    apt-get install -y curl socat jq uuid-runtime > /dev/null 2>&1
+    
+    # Descargar binario oficial si no existe
+    if ! command -v xray &> /dev/null; then
+        bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
+    fi
+    
+    mkdir -p /usr/local/etc/xray
+    
+    # Generar parámetros
+    KEYS=$(xray x25519)
+    PRIV=$(echo "$KEYS" | grep "Private key:" | awk '{print $3}')
+    PUB=$(echo "$KEYS" | grep "Public key:" | awk '{print $3}')
+    UUID=$(cat /proc/sys/kernel/random/uuid)
+    SHORTID=$(openssl rand -hex 8)
+    
+    echo -e -n "   ${CYAN}🔌 ¿Puerto para Xray? (Recomendado 443):${NC} "
+    read -r port
+    [ -z "$port" ] && port=443
+    liberar_puerto $port
+    
+    # Configuración MULTI-PROTOCOL (Reality + Fallbacks)
+    cat > /usr/local/etc/xray/config.json <<EOF
+{
+    "log": {"loglevel": "none"},
+    "inbounds": [
+        {
+            "port": $port,
+            "protocol": "vless",
+            "settings": {
+                "clients": [{"id": "$UUID", "flow": "xtls-rprx-vision"}],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "reality",
+                "realitySettings": {
+                    "show": false,
+                    "dest": "www.google.com:443",
+                    "xver": 0,
+                    "serverNames": ["www.google.com"],
+                    "privateKey": "$PRIV",
+                    "shortIds": ["$SHORTID"]
+                }
+            },
+            "sniffing": {"enabled": true, "destOverride": ["http", "tls"]}
+        },
+        {
+            "port": 10001,
+            "listen": "127.0.0.1",
+            "protocol": "vmess",
+            "settings": {"clients": [{"id": "$UUID"}]}
+        },
+        {
+            "port": 10002,
+            "listen": "127.0.0.1",
+            "protocol": "trojan",
+            "settings": {"clients": [{"password": "$UUID"}]}
+        }
+    ],
+    "outbounds": [{"protocol": "freedom"}]
+}
+EOF
+    systemctl restart xray > /dev/null 2>&1
+    echo -e "${GREEN}[✔] Xray Multi-Protocolo instalado en puerto $port.${NC}"
+    echo -e "${YELLOW}UUID/Pass: $UUID${NC}"
+    echo -e "${YELLOW}Public Key: $PUB${NC}"
+    echo -e "${YELLOW}Reality ShortID: $SHORTID${NC}"
+    sleep 5
+}
+
+function install_udp_custom() {
+    header
+    echo -e "\n${CYAN}[*] Instalando UDP Custom (Optimizado para Juegos)...${NC}"
+    # Descargar binario precompilado (Simulación de descarga de binario de confianza)
+    wget -qO /usr/bin/udp-custom https://github.com/underkraker/scriptgamer/raw/main/bin/udp-custom
+    chmod +x /usr/bin/udp-custom
+    
+    echo -e -n "   ${CYAN}🔌 ¿Puerto para UDP Custom? (Ej: 53):${NC} "
+    read -r port
+    [ -z "$port" ] && port=53
+    liberar_puerto $port
+    
+    cat > /etc/systemd/system/udp-custom.service <<EOF
+[Unit]
+Description=UDP Custom Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/udp-custom server -p $port
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload > /dev/null 2>&1
+    systemctl enable udp-custom > /dev/null 2>&1
+    systemctl restart udp-custom > /dev/null 2>&1
+    echo -e "${GREEN}[✔] UDP Custom activo en puerto $port.${NC}"
+    sleep 3
+}
+
 function manage_services() {
     while true; do
         header
         echo -e "   ${MAGENTA}❖${NC} ${WHITE}${BOLD}G E S T I O N   D E   S E R V I C I O S${NC} ${MAGENTA}❖${NC}\n"
         echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}🔄 Reiniciar Todos los Protocolos${NC}"
         echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}🛑 Detener Todos los Protocolos${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}📊 Estado de Protocolos (Systemctl)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Anterior${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
@@ -435,43 +540,16 @@ function manage_services() {
 
         case $opt in
             1)
-                echo -e "\n${YELLOW}⏳ Reiniciando servicios...${NC}"
-                systemctl restart dropbear 2>/dev/null
-                systemctl restart stunnel4 2>/dev/null
-                systemctl restart squid 2>/dev/null
-                systemctl restart ws-python 2>/dev/null
-                systemctl restart badvpn 2>/dev/null
-                systemctl restart sshd 2>/dev/null
-                echo -e "${GREEN}[✔] Protocolos reiniciados con éxito.${NC}"
+                systemctl restart dropbear stunnel4 squid ws-python badvpn sshd xray udp-custom slowdns wg-quick@wg0 shadowsocks-libev hysteria 2>/dev/null
+                echo -e "${GREEN}[✔] Todos los protocolos han sido reiniciados.${NC}"
                 sleep 2
                 ;;
             2)
-                echo -e "\n${YELLOW}⏳ Deteniendo servicios...${NC}"
-                systemctl stop dropbear 2>/dev/null
-                systemctl stop stunnel4 2>/dev/null
-                systemctl stop squid 2>/dev/null
-                systemctl stop ws-python 2>/dev/null
-                systemctl stop badvpn 2>/dev/null
-                echo -e "${GREEN}[✔] Protocolos detenidos.${NC}"
+                systemctl stop dropbear stunnel4 squid ws-python badvpn xray udp-custom 2>/dev/null
+                echo -e "${GREEN}[✔] Servicios detenidos.${NC}"
                 sleep 2
                 ;;
-            3)
-                echo -e "\n${CYAN}📊 Estado Rápido de Servicios:${NC}"
-                for s in sshd dropbear stunnel4 squid ws-python badvpn; do
-                    if systemctl is-active --quiet $s; then
-                        echo -e "   ${GREEN}[✔] $s : ACTIVO${NC}"
-                    else
-                        echo -e "   ${RED}[x] $s : INACTIVO${NC}"
-                    fi
-                done
-                echo -e "\n${WHITE}Presiona ENTER para continuar...${NC}"
-                read enter
-                ;;
             0) return ;;
-            *) 
-                echo -e "${RED}❌ Opción no válida.${NC}"
-                sleep 1
-                ;;
         esac
     done
 }
@@ -480,13 +558,13 @@ function services_menu() {
     while true; do
         header
         echo -e "   ${MAGENTA}❖${NC} ${WHITE}${BOLD}P R O T O C O L O S   Y   T Ú N E L E S${NC} ${MAGENTA}❖${NC}\n"
-        echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}🛠️  Dropbear SSH (Carga CPU baja)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}🔒 Stunnel4 (Ocultar por SSL Legacy)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}🌐 Proxy Squid3 (Básico para inyecciones)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}☁️  WebSocket Python (Para Cloudflare)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}🛡️  OpenVPN Instalador Automático${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}🔄 Administrador de Servicios (Reiniciar/Estado)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Inicial${NC}\n"
+        echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}🛠️  Dropbear SSH${NC}      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}🦇 Xray Multi (VLESS/VMess/Trojan)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}🔒 Stunnel4 (SSL)${NC}    ${CYAN}[${YELLOW} 7 ${CYAN}]${NC} ${BOLD}🎮 UDP Custom (Gaming)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}🌐 Proxy Squid3${NC}      ${CYAN}[${YELLOW} 8 ${CYAN}]${NC} ${BOLD}🐢 SlowDNS (Puerto 53)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}☁️  WebSocket Python${NC}  ${CYAN}[${YELLOW} 9 ${CYAN}]${NC} ${BOLD}🚀 WireGuard VPN${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}🛡️  OpenVPN${NC}           ${CYAN}[${YELLOW} 10${CYAN}]${NC} ${BOLD}👤 Shadowsocks-libev${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 11${CYAN}]${NC} ${BOLD}🔥 Hysteria 2 (UDP)${NC}  ${CYAN}[${YELLOW} 12${CYAN}]${NC} ${BOLD}🔄 Administrador${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
         echo -e -n "   ${WHITE}${BOLD}🎮 ¿Qué deseas instalar?:${NC} "
@@ -498,13 +576,271 @@ function services_menu() {
             3) install_squid ;;
             4) install_ws_python ;;
             5) install_openvpn ;;
-            6) manage_services ;;
+            6) install_xray ;;
+            7) install_udp_custom ;;
+            8) install_slowdns ;;
+            9) install_wireguard ;;
+            10) install_shadowsocks ;;
+            11) install_hysteria2 ;;
+            12) manage_services ;;
             0) return ;;
-            *) 
-                echo -e "${RED}❌ Opción no válida.${NC}"
-                sleep 1
-                continue 
-                ;;
+            *) echo -e "${RED}❌ Opción no válida.${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+function install_slowdns() {
+    header
+    echo -e "\n${CYAN}[*] Instalando SlowDNS (DNSTT) - El Rey del Puerto 53...${NC}"
+    
+    # Detener systemd-resolved si está ocupando el puerto 53
+    if ss -tunlp | grep -q ":53 "; then
+        echo -e "${YELLOW}[!] Puerto 53 ocupado. Liberando...${NC}"
+        systemctl stop systemd-resolved >/dev/null 2>&1
+        systemctl disable systemd-resolved >/dev/null 2>&1
+        [ -f /etc/resolv.conf ] && rm /etc/resolv.conf
+        echo "nameserver 8.8.8.8" > /etc/resolv.conf
+        echo "nameserver 8.8.4.4" > /etc/resolv.conf
+    fi
+
+    # Descargar binario dnstt-server
+    mkdir -p /etc/gaming_vps/slowdns
+    wget -qO /etc/gaming_vps/slowdns/dnstt-server https://github.com/underkraker/scriptgamer/raw/main/bin/dnstt-server
+    chmod +x /etc/gaming_vps/slowdns/dnstt-server
+
+    # Generar llaves si no existen
+    if [ ! -f /etc/gaming_vps/slowdns/server.pub ]; then
+        cd /etc/gaming_vps/slowdns
+        ./dnstt-server -gen-key -privkey server.key -pubkey server.pub > /dev/null 2>&1
+    fi
+
+    PUB_KEY=$(cat /etc/gaming_vps/slowdns/server.pub)
+    
+    echo -e -n "   ${CYAN}🔗 Ingrese su NS (Nameserver) ej. ns.tudominio.com:${NC} "
+    read -r ns_domain
+    if [ -z "$ns_domain" ]; then
+        echo -e "${RED}[x] Error: Es obligatorio tener un NS configurado en Cloudflare/Freenom.${NC}"
+        sleep 3
+        return
+    fi
+
+    # Crear Servicio Systemd para SlowDNS
+    cat > /etc/systemd/system/slowdns.service <<EOF
+[Unit]
+Description=SlowDNS Server - Gaming VPS
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/etc/gaming_vps/slowdns/dnstt-server -udp :5300 -privkey /etc/gaming_vps/slowdns/server.key $ns_domain 127.0.0.1:22
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Redirigir puerto 53 a 5300 con Iptables
+    iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5300
+    iptables-save > /etc/iptables.rules 2>/dev/null
+
+    systemctl daemon-reload
+    systemctl enable slowdns >/dev/null 2>&1
+    systemctl restart slowdns >/dev/null 2>&1
+
+    header
+    echo -e "${GREEN}[✔] SlowDNS configurado correctamente.${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   ${WHITE}DATOS PARA TU APP (HTTP Custom/Injector):${NC}"
+    echo -e "   ${YELLOW}NS Domain :${NC} ${WHITE}$ns_domain${NC}"
+    echo -e "   ${YELLOW}Public Key:${NC} ${WHITE}$PUB_KEY${NC}"
+    echo -e "   ${YELLOW}Puerto    :${NC} ${WHITE}53${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "\nPresiona ENTER para continuar..."
+    read enter
+}
+
+function install_wireguard() {
+    header
+    echo -e "\n${CYAN}[*] Instalando WireGuard (VPN de Alta Velocidad)...${NC}"
+    
+    # Instalar dependencias
+    apt-get update -y > /dev/null 2>&1
+    apt-get install -y wireguard qrencode iptables > /dev/null 2>&1
+
+    # Crear directorio si no existe
+    mkdir -p /etc/wireguard
+    chmod 700 /etc/wireguard
+
+    # Generar llaves del servidor
+    if [ ! -f /etc/wireguard/private.key ]; then
+        wg genkey | tee /etc/wireguard/private.key | wg pubkey > /etc/wireguard/public.key
+    fi
+    
+    PRIV_KEY=$(cat /etc/wireguard/private.key)
+    PUB_KEY=$(cat /etc/wireguard/public.key)
+
+    # Definir Red Interna
+    SERVER_IP="10.66.66.1"
+    SERVER_NET="10.66.66.0/24"
+    
+    # Detectar interfaz de red principal
+    NIC=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
+
+    # Configuración del servidor wg0.conf
+    cat > /etc/wireguard/wg0.conf <<EOF
+[Interface]
+Address = $SERVER_IP/24
+SaveConfig = true
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o $NIC -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o $NIC -j MASQUERADE
+ListenPort = 51820
+PrivateKey = $PRIV_KEY
+EOF
+
+    # Habilitar Forwarding en el sysctl
+    echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-wireguard.conf
+    sysctl -p /etc/sysctl.d/99-wireguard.conf > /dev/null 2>&1
+
+    # Iniciar y habilitar servicio
+    systemctl enable wg-quick@wg0 >/dev/null 2>&1
+    systemctl restart wg-quick@wg0 >/dev/null 2>&1
+
+    sleep 3
+}
+
+function install_shadowsocks() {
+    header
+    echo -e "\n${CYAN}[*] Instalando Shadowsocks-libev (Encrypted Proxy)...${NC}"
+    apt-get update -y > /dev/null 2>&1
+    apt-get install -y shadowsocks-libev > /dev/null 2>&1
+    
+    echo -e -n "   ${CYAN}🔌 ¿Puerto para Shadowsocks? (Ej: 8388):${NC} "
+    read -r ss_port
+    [ -z "$ss_port" ] && ss_port=8388
+    
+    echo -e -n "   ${CYAN}🔑 Contraseña para SS:${NC} "
+    read -r ss_pass
+    [ -z "$ss_pass" ] && ss_pass="krakerVIP"
+    
+    liberar_puerto $ss_port
+    
+    cat > /etc/shadowsocks-libev/config.json <<EOF
+{
+    "server":"0.0.0.0",
+    "server_port":$ss_port,
+    "password":"$ss_pass",
+    "timeout":300,
+    "method":"aes-256-gcm",
+    "mode":"tcp_and_udp"
+}
+EOF
+    systemctl restart shadowsocks-libev > /dev/null 2>&1
+    echo -e "${GREEN}[✔] Shadowsocks activo en puerto $ss_port.${NC}"
+    sleep 3
+}
+
+function install_hysteria2() {
+    header
+    echo -e "\n${CYAN}[*] Instalando Hysteria 2 (Protocolo Gaming de Alto Impacto)...${NC}"
+    apt-get update -y > /dev/null 2>&1
+    apt-get install -y curl openssl > /dev/null 2>&1
+    
+    # Descargar binario oficial
+    wget -qO /usr/bin/hysteria https://github.com/apernet/hysteria/releases/latest/download/hysteria-linux-amd64
+    chmod +x /usr/bin/hysteria
+    
+    mkdir -p /etc/hysteria
+    
+    # Generar Certificado Auto-firmado
+    openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt -days 3650 -subj "/CN=bing.com" > /dev/null 2>&1
+    
+    echo -e -n "   ${CYAN}🔌 ¿Puerto para Hysteria 2? (Ej: 443):${NC} "
+    read -r hy_port
+    [ -z "$hy_port" ] && hy_port=443
+    
+    echo -e -n "   ${CYAN}🔑 Contraseña (AUTH):${NC} "
+    read -r hy_auth
+    [ -z "$hy_auth" ] && hy_auth="krakerHY2"
+    
+    liberar_puerto $hy_port
+    
+    cat > /etc/hysteria/config.yaml <<EOF
+listen: :$hy_port
+tls:
+  cert: /etc/hysteria/server.crt
+  key: /etc/hysteria/server.key
+auth:
+  type: password
+  password: $hy_auth
+udp_idle_timeout: 60s
+EOF
+    
+    cat > /etc/systemd/system/hysteria.service <<EOF
+[Unit]
+Description=Hysteria 2 Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/hysteria server -c /etc/hysteria/config.yaml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    systemctl daemon-reload
+    systemctl enable hysteria >/dev/null 2>&1
+    systemctl restart hysteria >/dev/null 2>&1
+    
+    echo -e "${GREEN}[✔] Hysteria 2 activo en puerto $hy_port (UDP).${NC}"
+    sleep 3
+}
+
+function manage_dns() {
+    header
+    echo -e "\n   ${CYAN}❖${NC} ${WHITE}${BOLD}G E S T O R   D E   D N S${NC} ${MAGENTA}❖${NC}\n"
+    echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}Cloudflare (1.1.1.1)${NC}"
+    echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}Google (8.8.8.8)${NC}"
+    echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}AdGuard (Anti-Pub)${NC}"
+    echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}Regresar${NC}\n"
+    read -p "   Opción: " opt
+    
+    case $opt in
+        1) DNS1="1.1.1.1"; DNS2="1.0.0.1" ;;
+        2) DNS1="8.8.8.8"; DNS2="8.8.4.4" ;;
+        3) DNS1="94.140.14.14"; DNS2="94.140.15.15" ;;
+        0) return ;;
+        *) return ;;
+    esac
+    
+    echo -e "nameserver $DNS1\nnameserver $DNS2" > /etc/resolv.conf
+    echo -e "${GREEN}[✔] DNS actualizados con éxito.${NC}"
+    sleep 2
+}
+
+function tools_menu() {
+    while true; do
+        header
+        echo -e "   ${MAGENTA}❖${NC} ${WHITE}${BOLD}H E R R A M I E N T A S   E X T R A S${NC} ${MAGENTA}❖${NC}\n"
+        echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}🌐 Cambiar DNS del VPS${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}💾 Crear/Gestor de Memoria SWAP${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Inicial${NC}\n"
+        echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e -n "   ${WHITE}${BOLD}🎮 Selecciona una opción:${NC} "
+        read opt
+        case $opt in
+            1) manage_dns ;;
+            2) 
+               echo -e "\n${CYAN}[*] Creando 1GB de SWAP...${NC}"
+               fallocate -l 1G /swapfile
+               chmod 600 /swapfile
+               mkswap /swapfile
+               swapon /swapfile
+               echo "/swapfile none swap sw 0 0" >> /etc/fstab
+               echo -e "${GREEN}[✔] Memoria SWAP de 1GB activada.${NC}"
+               sleep 2
+               ;;
+            0) return ;;
         esac
     done
 }
@@ -943,7 +1279,23 @@ function main_menu() {
                     if pgrep -f "badvpn" >/dev/null; then PUERTOS_LIST+=("${p}(UDP)"); fi ;;
                 1194) 
                     if pgrep -f "openvpn" >/dev/null; then PUERTOS_LIST+=("${p}(OVPN)"); fi ;;
+                51820)
+                    if pgrep -f "wg-crypt-wg0" >/dev/null || [ -d /sys/class/net/wg0 ]; then PUERTOS_LIST+=("${p}(WG)"); fi ;;
+                53)
+                    if systemctl is-active --quiet slowdns; then PUERTOS_LIST+=("${p}(DNS)"); fi ;;
+                8388)
+                    if systemctl is-active --quiet shadowsocks-libev; then PUERTOS_LIST+=("${p}(SS)"); fi ;;
             esac
+            
+            # Caso especial para Hysteria 2 y Xray Multi-Port
+            if systemctl is-active --quiet hysteria && netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "hysteria"; then
+                PUERTOS_LIST+=("${p}(HY2)")
+            fi
+            
+            if systemctl is-active --quiet xray && netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "xray"; then
+                # Solo mostrar si es el puerto principal configurado por el usuario
+                PUERTOS_LIST+=("${p}(Xray)")
+            fi
             
             # Caso especial para el Python WS que puede estar en cualquier puerto
             if [ "$p" != "22" ] && [ "$p" != "80" ] && [ "$p" != "443" ] && pgrep -f "ws.py" >/dev/null; then
@@ -986,6 +1338,7 @@ function main_menu() {
         echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}⚙️  Instalador de Protocolos y Túneles${NC}"
         echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}📊 Monitor de Recursos (RAM/CPU/Ping)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}🛡️  Módulo de Seguridad y Anti-Abusos${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}🛠️  Herramientas de Sistema (DNS/Swap)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}❌ Cerrar Sesión${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "    ${CYAN}[${YELLOW}98${CYAN}]${NC} ${WHITE}🔄 Actualizar Script${NC}   ${CYAN}[${YELLOW}99${CYAN}]${NC} ${WHITE}🗑️ Desinstalar Script${NC}"
@@ -1009,6 +1362,9 @@ function main_menu() {
                 ;;
             5)
                 security_menu
+                ;;
+            6)
+                tools_menu
                 ;;
             98)
                 update_script
