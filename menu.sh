@@ -644,8 +644,6 @@ function users_menu() {
         echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}➕ Crear Cliente SSH (Pase Temporal)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}➖ Eliminar y Desconectar Cliente SSH${NC}"
         echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}👥 Ver Detalles y Límite de Clientes SSH${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}🦇 Crear Cliente WireGuard (Generar Config)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}📱 Mostrar Config/QR de un Cliente WireGuard${NC}"
         echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Inicial${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
@@ -656,8 +654,6 @@ function users_menu() {
             1) create_user ;;
             2) delete_user ;;
             3) list_ssh_users ;;
-            4) create_wg_user ;;
-            5) view_wg_user ;;
             0) return ;;
             *) 
                 echo -e "${RED}❌ Opción no válida.${NC}"
