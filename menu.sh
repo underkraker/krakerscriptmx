@@ -114,12 +114,12 @@ function open_internal_ports() {
 
 function optimizer_menu() {
     header
-    echo -e "\n${CYAN}>>> 🚀 MENÚ DE OPTIMIZACIÓN GAMING <<<${NC}\n"
-    echo -e "${YELLOW}  [1]${NC} - 🌐 Activar Google BBR (Acelerador de Ping TCP)"
-    echo -e "${YELLOW}  [2]${NC} - 🎮 Instalar BadVPN (Soporte UDP para Juegos en HTTP Custom/Injector)"
-    echo -e "${YELLOW}  [3]${NC} - 🔓 Abrir Puertos Internos (Purgar bloqueo de Ubuntu)"
-    echo -e "${YELLOW}  [0]${NC} - 🔙 Volver al Menú Principal\n"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "\n${CYAN}   ░▒▓ 🚀 OPTIMIZACIÓN GAMING 🚀 ▓▒░${NC}\n"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[1]${NC} ➔ 🌐 Activar Acelerador TCP BBR de Google"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[2]${NC} ➔ 🎮 Instalar BadVPN (Comunicaciones UDP)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[3]${NC} ➔ 🔓 Purgar y Abrir Puertos Internos (UFW)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[0]${NC} ➔ 🔙 Regresar al Menú Inicial"
+    echo -e "\n${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     
     echo -e -n "🎮 ${BOLD}¿Qué deseas hacer?:${NC} "
     read opt
@@ -299,16 +299,16 @@ function install_xray() {
 
 function services_menu() {
     header
-    echo -e "\n${CYAN}>>> ⚙️  MENÚ DE MULTI-PROTOCOLOS Y SERVICIOS <<<${NC}\n"
-    echo -e "${YELLOW}  [1]${NC} - 🛠️  Dropbear SSH (Carga CPU baja | Puertos 80, 143)"
-    echo -e "${YELLOW}  [2]${NC} - 🔒 Stunnel4 (Ocultar por SSL y SNI | Puerto 443)"
-    echo -e "${YELLOW}  [3]${NC} - 🌐 Proxy Squid3 (Básico para inyecciones | Puertos 8080/3128)"
-    echo -e "${YELLOW}  [4]${NC} - ☁️  WebSocket Python (Para Cloudflare Proxy | Puerto 8888)"
-    echo -e "${YELLOW}  [5]${NC} - 🛡️  OpenVPN Auto-Instalador (Por Angristan)"
-    echo -e "${YELLOW}  [6]${NC} - ⚡ WireGuard Auto-Instalador (Genial para Gaming puro)"
-    echo -e "${YELLOW}  [7]${NC} - 🦇 Xray Core Oficial (Para clientes V2Ray / HTTP Custom)"
-    echo -e "${YELLOW}  [0]${NC} - 🔙 Volver al Menú Principal\n"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "\n${CYAN}   ░▒▓ ⚙️  MULTI-PROTOCOLOS Y SERVICIOS ⚙️  ▓▒░${NC}\n"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[1]${NC} ➔ 🛠️  Dropbear SSH (Carga CPU baja | Puertos 80, 143)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[2]${NC} ➔ 🔒 Stunnel4 (Ocultar por SSL y SNI | Puerto 443)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[3]${NC} ➔ 🌐 Proxy Squid3 (Básico para inyecciones | 8080/3128)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[4]${NC} ➔ ☁️  WebSocket Python (Para Cloudflare | Puerto 8888)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[5]${NC} ➔ 🛡️  OpenVPN Instalador Automático"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[6]${NC} ➔ ⚡ WireGuard Auto-Instalador (Low Ping UDP)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[7]${NC} ➔ 🦇 Xray Core Oficial (Vmess/Vless/Trojan)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[0]${NC} ➔ 🔙 Regresar al Menú Inicial"
+    echo -e "\n${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     
     echo -e -n "🎮 ${BOLD}¿Qué deseas instalar?:${NC} "
     read opt
@@ -394,11 +394,11 @@ function delete_user() {
 
 function users_menu() {
     header
-    echo -e "\n${CYAN}>>> 👤 MENÚ DE GESTIÓN DE USUARIOS <<<${NC}\n"
-    echo -e "${YELLOW}  [1]${NC} - ➕ Crear Nuevo Usuario (SSH/Dropbear/Stunnel)"
-    echo -e "${YELLOW}  [2]${NC} - ➖ Eliminar Cliente Activo"
-    echo -e "${YELLOW}  [0]${NC} - 🔙 Volver al Menú Principal\n"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "\n${CYAN}   ░▒▓ 👤 GESTIÓN DE USUARIOS VIP 👤 ▓▒░${NC}\n"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[1]${NC} ➔ ➕ Crear Cliente con Autorización Temporal"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[2]${NC} ➔ ➖ Eliminar y Desconectar Cliente"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[0]${NC} ➔ 🔙 Regresar al Menú Inicial"
+    echo -e "\n${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     
     echo -e -n "🎮 ${BOLD}¿Qué deseas hacer?:${NC} "
     read opt
@@ -459,11 +459,11 @@ function clear_ram() {
 
 function monitor_menu() {
     header
-    echo -e "\n${CYAN}>>> 📊 MENÚ DE MONITORIZACIÓN <<<${NC}\n"
-    echo -e "${YELLOW}  [1]${NC} - 📈 Ver estado del CPU, RAM y Ping"
-    echo -e "${YELLOW}  [2]${NC} - 🧹 Limpiar Memoria RAM Cache (Bajar Latencia)"
-    echo -e "${YELLOW}  [0]${NC} - 🔙 Volver al Menú Principal\n"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "\n${CYAN}   ░▒▓ 📊 MONITORIZACIÓN Y ESTADO 📊 ▓▒░${NC}\n"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[1]${NC} ➔ 📈 Ver Estado en Vivo (CPU, RAM, Latencia)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[2]${NC} ➔ 🧹 Forzar Limpieza de Memoria RAM"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[0]${NC} ➔ 🔙 Regresar al Menú Inicial"
+    echo -e "\n${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     
     echo -e -n "🎮 ${BOLD}Selecciona una opción:${NC} "
     read opt
@@ -561,12 +561,12 @@ EOF
 
 function security_menu() {
     header
-    echo -e "\n${CYAN}>>> 🛡️  MENÚ EXPERTO: SEGURIDAD Y AUTOCONTROL  <<<${NC}\n"
-    echo -e "${YELLOW}  [1]${NC} - 🛑 Bloquear Torrents/P2P (Protección de Ping y Baneo)"
-    echo -e "${YELLOW}  [2]${NC} - ⏱️  Activar Auto-Limpieza de RAM (Cada 6h vía Cron)"
-    echo -e "${YELLOW}  [3]${NC} - ✂️  Activar Auto-Kill (Límite de dispositivos estricto)"
-    echo -e "${YELLOW}  [0]${NC} - 🔙 Volver al Menú Principal\n"
-    echo -e "${CYAN}======================================================${NC}"
+    echo -e "\n${CYAN}   ░▒▓ 🛡️  SEGURIDAD EXPERTA Y ANTI-ABUSO 🛡️  ▓▒░${NC}\n"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[1]${NC} ➔ 🛑 Bloquear Tráfico Torrent (Protección Web)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[2]${NC} ➔ ⏱️  Activar Tarea de Limpieza Automática (6 hrs)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[3]${NC} ➔ ✂️  Activar Watchdog Auto-Kill (Anti Multi-Login)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[0]${NC} ➔ 🔙 Regresar al Menú Inicial"
+    echo -e "\n${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     
     echo -e -n "🎮 ${BOLD}Selecciona una opción de seguridad:${NC} "
     read opt
@@ -588,13 +588,14 @@ function security_menu() {
 # Función para mostrar el panel principal
 function main_menu() {
     header
-    echo -e "\n${YELLOW}  [1]${NC} - 👤 Gestionar Usuarios (Crear/Eliminar Cuentas)"
-    echo -e "${YELLOW}  [2]${NC} - 🚀 Optimización Gaming (BBR, BadVPN, TCP Tweaks)"
-    echo -e "${YELLOW}  [3]${NC} - ⚙️ Instalar Servicios (Dropbear, VPNs, Proxys, WS)"
-    echo -e "${YELLOW}  [4]${NC} - 📊 Monitor de Recursos (CPU/RAM/Ping)"
-    echo -e "${YELLOW}  [5]${NC} - 🛡️  Seguridad y Automatización (Anti-Torrent, AutoKill)"
-    echo -e "${YELLOW}  [0]${NC} - ❌ Salir"
-    echo -e "\n${CYAN}======================================================${NC}"
+    echo -e "\n${CYAN}   ░▒▓ 💠 PANEL DE CONTROL PRINCIPAL 💠 ▓▒░${NC}\n"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[1]${NC} ➔ 👤 Gestor de Usuarios VIP"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[2]${NC} ➔ 🚀 Acelerador y Optimización de Red"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[3]${NC} ➔ ⚙️ Instalador de Protocolos y Túneles"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[4]${NC} ➔ 📊 Monitor del Servidor (RAM/CPU/Ping)"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[5]${NC} ➔ 🛡️  Módulo de Seguridad Extrema"
+    echo -e "  ${MAGENTA}❖${NC} ${YELLOW}[0]${NC} ➔ ❌ Cerrar Sesión"
+    echo -e "\n${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     
     echo -e -n "🎮 ${BOLD}Selecciona una opción:${NC} "
     read option
