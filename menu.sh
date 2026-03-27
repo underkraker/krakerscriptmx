@@ -163,6 +163,11 @@ EOF
     systemctl enable dropbear > /dev/null 2>&1
     systemctl restart dropbear > /dev/null 2>&1
     
+    # Permitir shell falso para usuarios VPN
+    if ! grep -q "/bin/false" /etc/shells; then
+        echo "/bin/false" >> /etc/shells
+    fi
+    
     echo -e "${GREEN}[✔] Dropbear instalado exitosamente (Puertos: 80, 143, 109).${NC}"
     sleep 3
     services_menu
@@ -370,6 +375,11 @@ function create_user() {
     read days
     echo -e -n "🔄 ${BOLD}Límite de conexiones simultáneas (ej. 1):${NC} "
     read limit
+    
+    # Asegurar que /bin/false sea un shell válido para Dropbear/OpenSSH (Evita error de 'Contraseña Incorrecta')
+    if ! grep -q "/bin/false" /etc/shells; then
+        echo "/bin/false" >> /etc/shells
+    fi
     
     # Crear usuario con fecha de expiración (shell falso /bin/false para evitar acceso root)
     useradd -e $(date -d "$days days" +"%Y-%m-%d") -s /bin/false -M "$username"
