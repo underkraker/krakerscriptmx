@@ -529,16 +529,15 @@ function create_wg_user() {
     done
     echo -e "${YELLOW}]${NC} ${GREEN}¡Listo!${NC}"
     
-    CONF_FILE=""
-    if [ -f "/root/${wg_user}.conf" ]; then
-        CONF_FILE="/root/${wg_user}.conf"
-    elif [ -f "./${wg_user}.conf" ]; then
-        CONF_FILE="./${wg_user}.conf"
-    elif [ -f "/home/${SUDO_USER}/${wg_user}.conf" ]; then
-        CONF_FILE="/home/${SUDO_USER}/${wg_user}.conf"
+    CONF_FILE=$(ls /root/*"${wg_user}.conf" 2>/dev/null | head -n 1)
+    if [ -z "$CONF_FILE" ]; then
+        CONF_FILE=$(ls ./*"${wg_user}.conf" 2>/dev/null | head -n 1)
+    fi
+    if [ -z "$CONF_FILE" ] && [ -n "$SUDO_USER" ]; then
+        CONF_FILE=$(ls /home/${SUDO_USER}/*"${wg_user}.conf" 2>/dev/null | head -n 1)
     fi
     
-    if [ -n "$CONF_FILE" ]; then
+    if [ -n "$CONF_FILE" ] && [ -f "$CONF_FILE" ]; then
         echo -e "\n   ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "   ${GREEN}[✔] Cliente WireGuard '$wg_user' Creado Exitosamente:${NC}\n"
         cat "$CONF_FILE"
