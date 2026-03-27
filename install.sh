@@ -24,9 +24,9 @@ echo -e "\n${CYAN}[*] Instalando dependencias base en el VPS...${NC}"
 apt-get update -y > /dev/null 2>&1
 apt-get install -y wget curl > /dev/null 2>&1
 
-# Descargar el menú desde GitHub (Raw)
+# Descargar el menú desde GitHub (Bypass caché)
 echo -e "${CYAN}[*] Descargando Panel desde el repositorio de GitHub...${NC}"
-wget -qO /usr/bin/menu "https://raw.githubusercontent.com/underkraker/scriptgamer/main/menu.sh"
+wget -qO /usr/bin/menu "https://raw.githubusercontent.com/underkraker/scriptgamer/main/menu.sh?t=$(date +%s)"
 
 if [ -f /usr/bin/menu ]; then
     # Otorgar permisos de dueño y ejecución universal
