@@ -1,30 +1,39 @@
 #!/bin/bash
 # Gaming VPS Script - Fase 1: Entorno Visual y Menú Principal
 
-# Definir Colores (Tema Neón/Gaming)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-MAGENTA='\033[0;35m'
+# Definir Colores (Tema Experto Gamer Neón)
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[1;36m'
+MAGENTA='\033[1;35m'
+WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Validar permisos de Administrador (ROOT)
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}❌ Error: Debes ejecutar este script como ROOT. Usa 'sudo su' primero.${NC}"
+  echo -e "\n${RED}❌ Error: Debes ejecutar este script como ROOT. Usa 'sudo su' primero.${NC}\n"
   exit 1
 fi
 
-# Función para mostrar el encabezado
+# Función para mostrar el encabezado VIP
 function header() {
     clear
-    echo -e "${CYAN}${BOLD}======================================================${NC}"
-    echo -e "${MAGENTA}${BOLD}          G A M I N G  -  V P S  -  P A N E L       ${NC}"
-    echo -e "${CYAN}${BOLD}======================================================${NC}"
-    echo -e " ${GREEN}> Optimizado para Ping Bajo | Rendimiento Máximo <${NC}"
-    echo -e "${CYAN}${BOLD}======================================================${NC}"
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${MAGENTA}  ██████╗  █████╗ ███╗   ███╗███████╗██████╗           ${CYAN}║${NC}"
+    echo -e "${CYAN}║${MAGENTA} ██╔════╝ ██╔══██╗████╗ ████║██╔════╝██╔══██╗          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${MAGENTA} ██║  ███╗███████║██╔████╔██║█████╗  ██████╔╝          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${MAGENTA} ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝  ██╔══██╗          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${MAGENTA} ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗██║  ██║          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${MAGENTA}  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝          ${CYAN}║${NC}"
+    echo -e "${CYAN}╠══════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${CYAN}║${YELLOW}${BOLD}           V P S   P A N E L   -   E X P E R T         ${CYAN}║${NC}"
+    echo -e "${CYAN}╠══════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${CYAN}║${GREEN}  ⚡ Optimizador Ping | 🛡️ Anti-DDoS | 🦇 Multi-Túnel  ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
+    echo -e ""
 }
 
 # ============== PARTE 2: OPTIMIZACIÓN GAMING ==============
