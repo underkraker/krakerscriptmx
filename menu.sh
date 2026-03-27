@@ -417,18 +417,7 @@ function install_openvpn() {
     return
 }
 
-function install_wireguard() {
-    header
-    echo -e "\n${CYAN}[*] Autoinstalador WireGuard (UDP Ultra Rápido)...${NC}"
-    echo -e "${YELLOW}>> El script instalará The WireGuard Auto-Install.${NC}"
-    sleep 4
-    wget -qO /etc/gaming_vps/wireguard.sh https://raw.githubusercontent.com/angristan/wireguard-install/master/wireguard-install.sh
-    chmod +x /etc/gaming_vps/wireguard.sh
-    bash /etc/gaming_vps/wireguard.sh
-    echo -e "${GREEN}[✔] Proceso de WireGuard finalizado.${NC}"
-    sleep 3
-    return
-}
+
 
 
 function manage_services() {
@@ -495,9 +484,8 @@ function services_menu() {
         echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}🔒 Stunnel4 (Ocultar por SSL Legacy)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}🌐 Proxy Squid3 (Básico para inyecciones)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}☁️  WebSocket Python (Para Cloudflare)${NC}"
-        echo -e "      ${CYAN}[${YELLOW}  5 ${CYAN}]${NC} ${BOLD}🛡️  OpenVPN Instalador Automático${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}⚡ WireGuard Auto-Instalador (Low Ping UDP)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 7 ${CYAN}]${NC} ${BOLD}🔄 Administrador de Servicios (Reiniciar/Estado)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}🛡️  OpenVPN Instalador Automático${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}🔄 Administrador de Servicios (Reiniciar/Estado)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Inicial${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
@@ -510,8 +498,7 @@ function services_menu() {
             3) install_squid ;;
             4) install_ws_python ;;
             5) install_openvpn ;;
-            6) install_wireguard ;;
-            7) manage_services ;;
+            6) manage_services ;;
             0) return ;;
             *) 
                 echo -e "${RED}❌ Opción no válida.${NC}"
@@ -602,45 +589,32 @@ function list_ssh_users() {
 
 function delete_user() {
     header
-    echo -e "\n   ${MAGENTA}❖${NC} ${WHITE}${BOLD}E L I M I N A R   U S U A R I O${NC} ${MAGENTA}❖${NC}\n"
+    echo function users_menu() {
+    while true; do
+        header
+        echo -e "   ${MAGENTA}❖${NC} ${WHITE}${BOLD}G E S T I O N   D E   C L I E N T E S${NC} ${MAGENTA}❖${NC}\n"
+        echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}➕ Crear Cliente SSH (Pase Temporal)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}➖ Eliminar y Desconectar Cliente SSH${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}👥 Ver Detalles y Límite de Clientes SSH${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Inicial${NC}\n"
+        echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
-    # Obtener lista de usuarios
-    users=($(ls /etc/gaming_vps/*.limit 2>/dev/null | sed 's/.*\///;s/\.limit//'))
-    
-    if [ ${#users[@]} -eq 0 ]; then
-        echo -e "   ${YELLOW}No hay usuarios registrados actualmente.${NC}"
-        sleep 3
-        return
-    fi
-    
-    echo -e "   ${CYAN}Lista de usuarios activos:${NC}"
-    for i in "${!users[@]}"; do
-        echo -e "      ${CYAN}[${YELLOW} $((i+1)) ${CYAN}]${NC} ${WHITE}${users[$i]}${NC}"
+        echo -e -n "   ${WHITE}${BOLD}🎮 ¿Qué deseas hacer?:${NC} "
+        read opt
+
+        case $opt in
+            1) create_user ;;
+            2) delete_user ;;
+            3) list_ssh_users ;;
+            0) return ;;
+            *) 
+                echo -e "${RED}❌ Opción no válida.${NC}"
+                sleep 1
+                continue 
+                ;;
+        esac
     done
-    echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}Cancelar operacion${NC}\n"
-    
-    echo -e -n "   ${WHITE}${BOLD}📝 Escribe el NÚMERO del usuario a eliminar:${NC} "
-    read opt
-    
-    if [[ "$opt" == "0" ]] || [[ -z "$opt" ]]; then
-        return
-    fi
-    
-    # Validar que sea un número válido
-    if ! [[ "$opt" =~ ^[0-9]+$ ]] || [ "$opt" -lt 1 ] || [ "$opt" -gt "${#users[@]}" ]; then
-        echo -e "\n   ${RED}[x] Opción inválida.${NC}"
-        sleep 2
-        return
-    fi
-    
-    # Obtener el nombre del usuario seleccionado
-    username="${users[$((opt-1))]}"
-    
-    # Proceder a eliminar
-    echo -e "\n   ${YELLOW}⏳ Eliminando usuario '$username'...${NC}"
-    if id "$username" &>/dev/null; then
-        pkill -u "$username" > /dev/null 2>&1
-        userdel --force "$username" > /dev/null 2>&1
+}el --force "$username" > /dev/null 2>&1
         rm -f "/etc/gaming_vps/$username.limit" 2>/dev/null
         echo -e "   ${GREEN}[✔] Usuario '$username' eliminado correctamente del VPS.${NC}"
     else
@@ -650,130 +624,7 @@ function delete_user() {
     return
 }
 
-function create_wg_user() {
-    header
-    echo -e "\n   ${MAGENTA}❖${NC} ${WHITE}${BOLD}C R E A R   C L I E N T E   W I R E G U A R D${NC} ${MAGENTA}❖${NC}\n"
-    
-    # Verificar estrictamente que WireGuard está instalado y funcionando
-    if [ ! -f /etc/wireguard/wg0.conf ]; then
-        echo -e "${RED}[x] Error Crítico: WireGuard no ha sido instalado o configurado en este VPS.${NC}"
-        echo -e "${YELLOW}>> Por favor, instálalo primero desde la opción [ 6 ] del menú de Protocolos.${NC}"
-        sleep 4
-        return
-    fi
-    
-    # Descargar el script en caso de que lo hubieran borrado
-    if [ ! -f /etc/gaming_vps/wireguard.sh ]; then
-        wget -qO /etc/gaming_vps/wireguard.sh https://raw.githubusercontent.com/angristan/wireguard-install/master/wireguard-install.sh
-        chmod +x /etc/gaming_vps/wireguard.sh
-    fi
-    
-    echo -e -n "   ${CYAN}👤 Nombre del perfil (sin espacios, evitar duplicados):${NC} "
-    read wg_user
-    
-    # ====== VALIDACIONES ANTES DE ENVIAR AL SCRIPT ======
-    if ! [[ ${wg_user} =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        echo -e "\n   ${RED}[x] Error: El nombre solo puede contener letras, números, guiones y rayas bajas.${NC}"
-        sleep 3; return
-    fi
-    if [ ${#wg_user} -gt 15 ]; then
-        echo -e "\n   ${RED}[x] Error: El nombre de usuario no puede exceder los 15 caracteres.${NC}"
-        sleep 3; return
-    fi
-    # Verificar si ya existe para evitar bucles infinitos en el sub-script
-    if grep -q -E "^### Client ${wg_user}\$" "/etc/wireguard/wg0.conf" 2>/dev/null; then
-        echo -e "\n   ${RED}[x] Error: Un cliente con el nombre '$wg_user' ya existe. Elige otro.${NC}"
-        sleep 3; return
-    fi
-    
-    # Forzar parámetros requeridos
-    export MENU_OPTION="1"
-    export CLIENT_NAME="$wg_user"
-    export PASS="1"
-    
-    # Ejecutar en segundo plano enviando las entradas necesarias mediante tubería
-    # Esto evita modificar el script original destructivamente y asegura compatibilidad
-    echo -e "1\n${wg_user}\n1" | bash /etc/gaming_vps/wireguard.sh >/dev/null 2>&1 &
-    PID=$!
-    
-    echo -e ""
-    echo -e -n "   ${YELLOW}⏳ Generando configuración [${NC}"
-    
-    # Bucle de progreso (máximo 15 segundos para evitar cuelgues eternos de seguridad)
-    timeout=0
-    while kill -0 $PID 2>/dev/null; do
-        echo -n "█"
-        sleep 0.5
-        ((timeout++))
-        if [ $timeout -ge 30 ]; then
-            kill -9 $PID 2>/dev/null
-            echo -e "${YELLOW}]${NC} ${RED}❌ Error (Tiempo límite superado)${NC}"
-            echo -e "   ${RED}El instalador subyacente de WireGuard se trabó. Abortando protección.${NC}"
-            sleep 3; return
-        fi
-    done
-    echo -e "${YELLOW}]${NC} ${GREEN}¡Listo!${NC}"
-    
-    CONF_FILE=$(ls /root/*"${wg_user}.conf" 2>/dev/null | head -n 1)
-    if [ -z "$CONF_FILE" ]; then
-        CONF_FILE=$(ls ./*"${wg_user}.conf" 2>/dev/null | head -n 1)
-    fi
-    if [ -z "$CONF_FILE" ] && [ -n "$SUDO_USER" ]; then
-        CONF_FILE=$(ls /home/${SUDO_USER}/*"${wg_user}.conf" 2>/dev/null | head -n 1)
-    fi
-    
-    if [ -n "$CONF_FILE" ] && [ -f "$CONF_FILE" ]; then
-        echo -e "\n   ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "   ${GREEN}[✔] Cliente WireGuard '$wg_user' Creado Exitosamente:${NC}\n"
-        cat "$CONF_FILE"
-        echo -e "\n   ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        
-        # Renderizar QR Terminal si qrencode existe (el instalador de angristan suele instalarlo)
-        if command -v qrencode &> /dev/null; then
-            echo -e "\n   ${CYAN}📱 Código QR de Conexión (Escanea con App Móvil):${NC}"
-            qrencode -t UTF8 < "$CONF_FILE"
-        fi
-    else
-        echo -e "\n${RED}[x] Ocurrió un error o el perfil no se pudo generar.${NC}"
-    fi
-    
-    echo -e "\n   ${WHITE}Presiona ENTER para volver al menú de usuarios...${NC}"
-    read enter
-    return
-}
 
-function view_wg_user() {
-    header
-    echo -e "\n   ${MAGENTA}❖${NC} ${WHITE}${BOLD}V E R   P E R F I L   W I R E G U A R D${NC} ${MAGENTA}❖${NC}\n"
-    
-    echo -e -n "   ${CYAN}👤 Nombre del perfil WireGuard a buscar:${NC} "
-    read wg_user
-    
-    CONF_FILE=$(ls /root/*"${wg_user}.conf" 2>/dev/null | head -n 1)
-    if [ -z "$CONF_FILE" ]; then
-        CONF_FILE=$(ls ./*"${wg_user}.conf" 2>/dev/null | head -n 1)
-    fi
-    if [ -z "$CONF_FILE" ] && [ -n "$SUDO_USER" ]; then
-        CONF_FILE=$(ls /home/${SUDO_USER}/*"${wg_user}.conf" 2>/dev/null | head -n 1)
-    fi
-    
-    if [ -n "$CONF_FILE" ] && [ -f "$CONF_FILE" ]; then
-        echo -e "\n   ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        cat "$CONF_FILE"
-        echo -e "\n   ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        
-        if command -v qrencode &> /dev/null; then
-            echo -e "\n   ${CYAN}📱 Código QR de Conexión:${NC}"
-            qrencode -t UTF8 < "$CONF_FILE"
-        fi
-    else
-        echo -e "\n${RED}[x] No se encontró la configuración local para el usuario: '$wg_user'.${NC}"
-    fi
-    
-    echo -e "\n   ${WHITE}Presiona ENTER para volver al menú de usuarios...${NC}"
-    read enter
-    return
-}
 
 
 function users_menu() {
@@ -1068,39 +919,36 @@ function main_menu() {
         CPU_LOAD=${CPU_LOAD%.*} # Quitar decimales
         [ -z "$CPU_LOAD" ] && CPU_LOAD="0"
 
-        # Listar puertos abiertos nativos del script de forma dinámica
-        ACTIVOS=$(ss -tuln 2>/dev/null | awk 'NR>1 {print $5}' | awk -F: '{print $NF}' | sort -n | uniq)
-        PUERTOS=""
-        
         # Listar puertos abiertos dinámicos, excluyendo basura del sistema
-        ACTIVOS=$(ss -tuln 2>/dev/null | awk 'NR>1 {print $5}' | awk -F: '{print $NF}' | sort -n | uniq)
+        ACTIVOS=$(ss -tuln | awk '{print $5}' | cut -d: -f2 | grep -v '^$' | sort -u)
         PUERTOS=""
         
         for p in $ACTIVOS; do
-            # Filtros de puertos basura nativos de linux o randoms internos (>30000)
-            if [ "$p" -eq 53 ] || [ "$p" -eq 68 ] || [ "$p" -eq 323 ] || [ "$p" -eq 111 ] || [ "$p" -gt 32000 ]; then
-                continue
-            fi
+            # Filtro estricto de puertos NO 'basura' (Solo mostramos protocolos de tunnel conocidos)
+            case $p in
+                22) PUERTOS+="${p}(SSH) " ;;
+                80|143|109) 
+                    if pgrep -f "dropbear.*-p $p" >/dev/null; then PUERTOS+="${p}(Drop) "; fi ;;
+                443|444|445) 
+                    if pgrep -f "stunnel4" >/dev/null; then PUERTOS+="${p}(SSL) "; fi ;;
+                8080|3128) 
+                    if pgrep -f "squid" >/dev/null; then PUERTOS+="${p}(Sqd) "; fi ;;
+                7300|7400|7500) 
+                    if pgrep -f "badvpn" >/dev/null; then PUERTOS+="${p}(UDP) "; fi ;;
+                1194) 
+                    if pgrep -f "openvpn" >/dev/null; then PUERTOS+="${p}(OVPN) "; fi ;;
+            esac
             
-            # Identificar ciertos servicios conocidos
-            if pgrep -f "dropbear.*-p $p" >/dev/null || [ "$p" == "80" ]; then
-                PUERTOS+="${p}(Drop) "
-            elif [ "$p" == "22" ] && pgrep sshd >/dev/null; then
-                PUERTOS+="${p}(SSH) "
-            elif netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "stunnel"; then
-                PUERTOS+="${p}(SSL) "
-            elif netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "squid"; then
-                PUERTOS+="${p}(Sqd) "
-            elif netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "python"; then
-                PUERTOS+="${p}(WS) "
-            elif netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "badvpn"; then
-                PUERTOS+="${p}(VPN) "
-            elif [ "$p" == "51820" ]; then
-                PUERTOS+="51820(WG) "
+            # Caso especial para el Python WS que puede estar en cualquier puerto
+            if [ "$p" != "22" ] && [ "$p" != "80" ] && [ "$p" != "443" ] && pgrep -f "ws.py" >/dev/null; then
+                 # Si el puerto $p es el puerto que escucha el servicio ws-python
+                 if netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "python"; then
+                    PUERTOS+="${p}(WS) "
+                 fi
             fi
         done
         
-        [ -z "$PUERTOS" ] && PUERTOS="Ninguno"
+        [ -z "$PUERTOS" ] && PUERTOS="Sin Protocolos Activos"
 
         header
         echo -e "   ${CYAN}🌐 IP Server :${NC} ${WHITE}${BOLD}${VPS_IP}${NC}"
