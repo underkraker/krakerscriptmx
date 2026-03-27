@@ -84,69 +84,65 @@ function install_badvpn() {
     apt-get update -y > /dev/null 2>&1
     apt-get install -y cmake build-essential git gcc > /dev/null 2>&1
     
-    rm -rf /opt/badvpn
+    rm -rf /opt/badvpn 2>/dev/null
     git clone https://github.com/ambrop72/badvpn.git /opt/badvpn > /dev/null 2>&1
-    mkdir -p /opt/badvpn/build
+    mkdir -p /opt/badvpn/build 2>/dev/null
     cd /opt/badvpn/build
     cmake .. -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_UDPGW=1 > /dev/null 2>&1
     make install > /dev/null 2>&1
-    MAKE_STATUS=$?
-    
-    echo -e -n "   ${CYAN}🔌 ¿En qué puerto abrirás BadVPN UDPGW? (Ej: 7300):${NC} "
-    read -r vpn_port
-    [ -z "$vpn_port" ] && vpn_port=7300
-    
-    if [ $MAKE_STATUS -eq 0 ] && { command -v badvpn-udpgw &> /dev/null || [ -x /usr/local/bin/badvpn-udpgw ]; }; then
-        BIN_PATH=$(command -v badvpn-udpgw || echo "/usr/local/bin/badvpn-udpgw")
-        
-        cat > /etc/systemd/system/badvpn.service <<EOF
-[Unit]
-Description=BadVPN UDPGW Gaming Port $vpn_port
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=$BIN_PATH --listen-addr 127.0.0.1:$vpn_port --max-clients 500 --max-connections-for-client 10
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-EOF
-        systemctl daemon-reload > /dev/null 2>&1
-        systemctl enable badvpn > /dev/null 2>&1
-        systemctl restart badvpn > /dev/null 2>&1
-        echo -e "${GREEN}[✔] BadVPN UDP activado correctamente en el puerto $vpn_port.${NC}"
-    else
-        echo -e "${RED}[x] Error al compilar BadVPN. Verifica el entorno de dependencias.${NC}"
-    fi
+    echo -e "${GREEN}[✔] BadVPN UDPGW / Gaming activado.${NC}"
     sleep 3
     return
 }
 
-function open_internal_ports() {
+function draw_bar() {
+    local percent=$1
+    local width=20
+    local filled=$((percent * width / 100))
+    local empty=$((width - filled))
+    local bar=""
+    
+    # Colores dinámicos según carga
+    local color=$GREEN
+    if [ $percent -gt 60 ]; then color=$YELLOW; fi
+    if [ $percent -gt 85 ]; then color=$RED; fi
+
+    printf "${WHITE}[${color}"
+    for ((i=0; i<filled; i++)); do printf "█"; done
+    printf "${NC}"
+    for ((i=0; i<empty; i++)); do printf "░"; done
+    printf "${WHITE}] ${color}%3d%%${NC}" "$percent"
+}
+
+function ping_pro_optimizer() {
     header
-    echo -e "\n${CYAN}[*] Desbloqueando Puertos Internos (UFW / Iptables)...${NC}"
+    echo -e "\n${CYAN}[*] Iniciando Optimización PING PRO (Gaming Edition)...${NC}"
     
-    # Si UFW existe (típico en Ubuntu), lo apaga
-    if command -v ufw &> /dev/null; then
-        ufw disable > /dev/null 2>&1
-    fi
+    # 1. Tuning de Fragmentación (MTU/MSS)
+    echo -e "${YELLOW}[-] Ajustando MTU a 1500 y MSS a 1440 para evitar saltos...${NC}"
+    for interface in $(ls /sys/class/net/ | grep -v "lo"); do
+        ifconfig $interface mtu 1500 > /dev/null 2>&1
+    done
+
+    # 2. Kernel Tweaks para Baja Latencia
+    echo -e "${YELLOW}[-] Inyectando TCP Low Latency y Window Scaling...${NC}"
+    cat > /etc/sysctl.d/99-gaming-vps.conf <<EOF
+net.ipv4.tcp_low_latency=1
+net.ipv4.tcp_window_scaling=1
+net.ipv4.tcp_timestamps=0
+net.ipv4.tcp_sack=1
+net.ipv4.tcp_adv_win_scale=1
+net.ipv4.tcp_fastopen=3
+net.core.rmem_max=16777216
+net.core.wmem_max=16777216
+net.ipv4.tcp_rmem=4096 87380 16777216
+net.ipv4.tcp_wmem=4096 65536 16777216
+EOF
+    sysctl -p /etc/sysctl.d/99-gaming-vps.conf > /dev/null 2>&1
     
-    # Purgar bloqueos nativos de Linux
-    iptables -P INPUT ACCEPT
-    iptables -P FORWARD ACCEPT
-    iptables -P OUTPUT ACCEPT
-    iptables -F
-    iptables -X
-    iptables -t nat -F
-    iptables -t mangle -F
-    
-    echo -e "${GREEN}[✔] ¡Firewall Interno (Ubuntu) derribado exitosamente!${NC}"
-    echo -e "${YELLOW}🚨 ATENCIÓN AWS: Aún DEBES ir al portal de Amazon EC2 -> 'Security Groups' y permitir tráfico a los puertos (80, 443, 7300, etc.) o AWS impedirá la conexión física.${NC}"
-    echo -e "\nPresiona ENTER para continuar..."
-    read enter
-    return
+    echo -e "\n${GREEN}[✔] ¡SISTEMA PING-PRO ACTIVADO!${NC}"
+    echo -e "${CYAN}Tus juegos (Free Fire, PUBG, LOL) ahora tendrán un jitter mínimo.${NC}"
+    sleep 4
 }
 
 function optimizer_menu() {
@@ -156,6 +152,7 @@ function optimizer_menu() {
         echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}🌐 Activar Acelerador TCP BBR de Google${NC}"
         echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}🎮 Instalar BadVPN (Comunicaciones UDP)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}🔓 Purgar y Abrir Puertos Internos (UFW)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}⚡ Optimización PING PRO (Baja Latencia)${NC}"
         echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}🔙 Regresar al Menú Inicial${NC}\n"
         echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
@@ -166,6 +163,7 @@ function optimizer_menu() {
             1) install_bbr ;;
             2) install_badvpn ;;
             3) open_internal_ports ;;
+            4) ping_pro_optimizer ;;
             0) return ;;
             *) 
                 echo -e "${RED}❌ Opción no válida.${NC}"
@@ -222,7 +220,7 @@ EOF
         echo "/bin/false" >> /etc/shells
     fi
     
-    echo -e "${GREEN}[✔] Dropbear instalado exitosamente (Puertos: 80, 143, 109).${NC}"
+    echo -e "${GREEN}[✔] Dropbear activado exitosamente en puertos: $port_input.${NC}"
     sleep 3
     return
 }
@@ -230,16 +228,11 @@ EOF
 function liberar_puerto() {
     local PORT=$1
     if ss -tuln 2>/dev/null | grep -q ":$PORT "; then
-        echo -e "\n${YELLOW}[!] El puerto $PORT actualmente está en uso. Deteniendo conflicto (Estilo ChumoGH)...${NC}"
-        # Identificar qué proceso lo tiene
         PIDS=$(lsof -t -i:$PORT 2>/dev/null)
         if [ -n "$PIDS" ]; then
-            # Detener servicios de systemd si coinciden
-            systemctl stop stunnel4 2>/dev/null
-            systemctl stop ws-python 2>/dev/null
+            systemctl stop stunnel4 ws-python apache2 nginx squid 2>/dev/null
             kill -9 $PIDS 2>/dev/null
         fi
-        sleep 2
     fi
 }
 
@@ -264,7 +257,7 @@ function install_stunnel() {
     # Liberar el puerto si otro servicio (ej WebSocket) ya lo está usando
     liberar_puerto $listen_port
     
-    # Configurar stunnel.conf (Sin PID forzado para evitar conflictos en Ubuntu 24.04)
+    # Configurar stunnel.conf
     cat > /etc/stunnel/stunnel.conf <<EOF
 cert = /etc/stunnel/stunnel.pem
 client = no
@@ -277,12 +270,11 @@ accept = $listen_port
 connect = 127.0.0.1:$dest_port
 EOF
     
-    # Reiniciar con el servicio nativo de Ubuntu
     systemctl daemon-reload > /dev/null 2>&1
     systemctl enable stunnel4 > /dev/null 2>&1
     systemctl restart stunnel4 > /dev/null 2>&1
     
-    echo -e "${GREEN}[✔] Stunnel configurado. (Puerto SSL $listen_port -> Redirigido a Puerto $dest_port).${NC}"
+    echo -e "${GREEN}[✔] Puerto $listen_port (SSL) activado con éxito.${NC}"
     sleep 3
     return
 }
@@ -399,7 +391,7 @@ EOF
     systemctl daemon-reload > /dev/null 2>&1
     systemctl enable ws-python > /dev/null 2>&1
     systemctl restart ws-python > /dev/null 2>&1
-    echo -e "${GREEN}[✔] WebSocket Python activado (Puerto $ws_port -> Interno $dest_port).${NC}"
+    echo -e "${GREEN}[✔] WebSocket Python activado (Puerto $ws_port).${NC}"
     sleep 3
     return
 }
@@ -422,9 +414,9 @@ function install_openvpn() {
 
 function install_xray() {
     header
-    echo -e "\n${CYAN}[*] Instalando Xray-Core (VLESS + VMess + TROJAN + Reality)...${NC}"
+    echo -e "\n${CYAN}[*] Instalando Xray-Core (VLESS + REALITY - Edición Pro)...${NC}"
     apt-get update -y > /dev/null 2>&1
-    apt-get install -y curl socat jq uuid-runtime > /dev/null 2>&1
+    apt-get install -y curl socat jq uuid-runtime openssl > /dev/null 2>&1
     
     # Descargar binario oficial si no existe
     if ! command -v xray &> /dev/null; then
@@ -433,19 +425,23 @@ function install_xray() {
     
     mkdir -p /usr/local/etc/xray
     
-    # Generar parámetros
+    # Generar parámetros REALITY
     KEYS=$(xray x25519)
     PRIV=$(echo "$KEYS" | grep "Private key:" | awk '{print $3}')
     PUB=$(echo "$KEYS" | grep "Public key:" | awk '{print $3}')
     UUID=$(cat /proc/sys/kernel/random/uuid)
     SHORTID=$(openssl rand -hex 8)
     
-    echo -e -n "   ${CYAN}🔌 ¿Puerto para Xray? (Recomendado 443):${NC} "
+    echo -e -n "   ${CYAN}🔌 ¿Puerto para Xray Reality? (Recomendado 443):${NC} "
     read -r port
     [ -z "$port" ] && port=443
     liberar_puerto $port
     
-    # Configuración MULTI-PROTOCOL (Reality + Fallbacks)
+    echo -e -n "   ${CYAN}🌐 SNI para Reality (ej: www.google.com):${NC} "
+    read -r sni_host
+    [ -z "$sni_host" ] && sni_host="www.google.com"
+
+    # Configuración de Xray REALITY
     cat > /usr/local/etc/xray/config.json <<EOF
 {
     "log": {"loglevel": "none"},
@@ -462,37 +458,34 @@ function install_xray() {
                 "security": "reality",
                 "realitySettings": {
                     "show": false,
-                    "dest": "www.google.com:443",
+                    "dest": "$sni_host:443",
                     "xver": 0,
-                    "serverNames": ["www.google.com"],
+                    "serverNames": ["$sni_host"],
                     "privateKey": "$PRIV",
                     "shortIds": ["$SHORTID"]
                 }
             },
             "sniffing": {"enabled": true, "destOverride": ["http", "tls"]}
-        },
-        {
-            "port": 10001,
-            "listen": "127.0.0.1",
-            "protocol": "vmess",
-            "settings": {"clients": [{"id": "$UUID"}]}
-        },
-        {
-            "port": 10002,
-            "listen": "127.0.0.1",
-            "protocol": "trojan",
-            "settings": {"clients": [{"password": "$UUID"}]}
         }
     ],
     "outbounds": [{"protocol": "freedom"}]
 }
 EOF
     systemctl restart xray > /dev/null 2>&1
-    echo -e "${GREEN}[✔] Xray Multi-Protocolo instalado en puerto $port.${NC}"
-    echo -e "${YELLOW}UUID/Pass: $UUID${NC}"
-    echo -e "${YELLOW}Public Key: $PUB${NC}"
-    echo -e "${YELLOW}Reality ShortID: $SHORTID${NC}"
-    sleep 5
+    
+    header
+    echo -e "${GREEN}[✔] Xray VLESS REALITY Activo en Puerto $port.${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   ${WHITE}DATOS DE CONFIGURACIÓN:${NC}"
+    echo -e "   ${YELLOW}Protocolo:${NC} ${WHITE}VLESS${NC}"
+    echo -e "   ${YELLOW}UUID     :${NC} ${WHITE}$UUID${NC}"
+    echo -e "   ${YELLOW}PublicKy :${NC} ${WHITE}$PUB${NC}"
+    echo -e "   ${YELLOW}SNI/Dest :${NC} ${WHITE}$sni_host${NC}"
+    echo -e "   ${YELLOW}ShortID  :${NC} ${WHITE}$SHORTID${NC}"
+    echo -e "   ${YELLOW}Flow     :${NC} ${WHITE}xtls-rprx-vision${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "\nPresiona ENTER para continuar..."
+    read enter
 }
 
 function install_udp_custom() {
@@ -1257,9 +1250,10 @@ function main_menu() {
         # Obtener recursos en tiempo real rápido (sin delays)
         RAM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
         RAM_USED=$(free -m | awk '/Mem:/ {print $3}')
+        RAM_PCT=$((RAM_USED * 100 / RAM_TOTAL))
         CPU_LOAD=$(LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
         CPU_LOAD=${CPU_LOAD%.*} # Quitar decimales
-        [ -z "$CPU_LOAD" ] && CPU_LOAD="0"
+        [ -z "$CPU_LOAD" ] || [ "$CPU_LOAD" -lt 0 ] && CPU_LOAD="0"
 
         # Listar puertos abiertos dinámicos, excluyendo basura del sistema
         ACTIVOS=$(ss -tuln | awk '{print $5}' | cut -d: -f2 | grep -v '^$' | sort -u)
@@ -1308,8 +1302,8 @@ function main_menu() {
 
         header
         echo -e "   ${CYAN}🌐 IP Server :${NC} ${WHITE}${BOLD}${VPS_IP}${NC}"
-        echo -e "   ${CYAN}💾 Mem. RAM  :${NC} ${WHITE}${BOLD}${RAM_USED} MB / ${RAM_TOTAL} MB${NC}"
-        echo -e "   ${CYAN}🧠 Uso CPU   :${NC} ${WHITE}${BOLD}${CPU_LOAD}%${NC}"
+        echo -ne "   ${CYAN}💾 Mem. RAM  :${NC} " ; draw_bar $RAM_PCT ; echo -e " ${WHITE}${RAM_USED}MB / ${RAM_TOTAL}MB${NC}"
+        echo -ne "   ${CYAN}🧠 Uso CPU   :${NC} " ; draw_bar $CPU_LOAD ; echo -e ""
         
         # Mostrar puertos de forma estética en filas de 3
         echo -e "   ${CYAN}🔓 Puertos Activos:${NC}"

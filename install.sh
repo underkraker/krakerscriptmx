@@ -24,8 +24,6 @@ echo -e "\n${CYAN}[*] Instalando dependencias base en el VPS...${NC}"
 apt-get update -y > /dev/null 2>&1
 apt-get install -y wget curl jq net-tools iproute2 cron ca-certificates iptables > /dev/null 2>&1
 
-
-
 # Descargar el menú desde GitHub (Bypass caché)
 echo -e "${CYAN}[*] Descargando Panel desde el repositorio de GitHub...${NC}"
 wget -qO /usr/bin/menu "https://raw.githubusercontent.com/underkraker/scriptgamer/main/menu.sh?t=$(date +%s)"
@@ -48,6 +46,11 @@ if [ -f /usr/bin/menu ]; then
     else
         rm -f /etc/gaming_vps/slogan.txt
     fi
+    
+    # NUEVO: Activar Seguridad Automática por defecto
+    echo -e "${CYAN}[*] Configurando Auto-Kill y Limpieza de RAM...${NC}"
+    # Ejecutar funciones internas de seguridad del menu.sh silenciosamente
+    bash -c "source /usr/bin/menu && setup_autokill > /dev/null 2>&1 && setup_auto_clean > /dev/null 2>&1"
     
     echo -e "\n${GREEN}${BOLD}[✔] INSTALACIÓN COMPLETADA CON ÉXITO.${NC}"
     echo -e "${CYAN}======================================================${NC}"
