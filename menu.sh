@@ -344,24 +344,26 @@ def forward(src, dst):
 
 def handle_client(client_socket):
     try:
-        client_socket.settimeout(3.0)
-        request = client_socket.recv(4096)
+        # PING/PONG y timeout de 0.5s para detectar SSH Puro vs Payload HTTP
+        client_socket.settimeout(0.5)
+        try:
+            request = client_socket.recv(4096)
+        except socket.timeout:
+            request = b''
         client_socket.settimeout(None)
-        if not request: return
         
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         remote_socket.connect(('127.0.0.1', $dest_port))
         
-        # Mapeo inteligente de Handshake (Estilo ChumoGH Avanzado)
-        req_str = request.decode('utf-8', 'ignore')
-        if "Upgrade: websocket" in req_str.lower() or "upgrade: ws" in req_str.lower():
-            client_socket.send(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
-        elif "HTTP" in req_str or "CONNECT" in req_str or "GET" in req_str:
-            # Es un Payload simple (Injector/Custom) sin WebSocket
-            client_socket.send(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-        else:
-            # Si es tráfico puro (ej SSH bruto), enviamos la petición original intacta
-            remote_socket.send(request)
+        # Mapeo universal (HTTP, WS o Pure SSH sin payload)
+        if request:
+            req_str = request.decode('utf-8', 'ignore')
+            if "Upgrade: websocket" in req_str.lower() or "upgrade: ws" in req_str.lower():
+                client_socket.send(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
+            elif "HTTP" in req_str or "CONNECT" in req_str or "GET" in req_str:
+                client_socket.send(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            else:
+                remote_socket.send(request)
             
         threading.Thread(target=forward, args=(client_socket, remote_socket)).start()
         threading.Thread(target=forward, args=(remote_socket, client_socket)).start()
@@ -556,6 +558,11 @@ function create_user() {
     # Guardar límite de conexiones en un registro local del panel
     mkdir -p /etc/gaming_vps
     echo "$limit" > "/etc/gaming_vps/$username.limit"
+    
+    # Reparar OpenSSH para asegurar que permite contraseñas y logins de VPN
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/g' /etc/ssh/sshd_config 2>/dev/null
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config 2>/dev/null
+    systemctl restart sshd 2>/dev/null
     
     echo -e "\n   ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "   ${GREEN}[✔] Usuario Premium Creado Exitosamente:${NC}\n"
