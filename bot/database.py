@@ -43,7 +43,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- FUNCIONES DE VPS ---
+# --- FUNCIONES DE VPS (SIEMPRE RETORNAN DICT) ---
 def add_vps(owner_id, name, ip, user, auth_type, auth_val, use_sudo=0):
     conn = get_conn()
     if auth_type == 'pass':
@@ -61,7 +61,7 @@ def get_user_vps(owner_id):
     c.execute("SELECT * FROM vps_connections WHERE owner_id = ?", (owner_id,))
     rows = c.fetchall()
     conn.close()
-    return rows
+    return [dict(r) for r in rows]
 
 def get_vps_by_id(vps_id):
     conn = get_conn()
@@ -69,7 +69,7 @@ def get_vps_by_id(vps_id):
     c.execute("SELECT * FROM vps_connections WHERE id = ?", (vps_id,))
     row = c.fetchone()
     conn.close()
-    return row
+    return dict(row) if row else None
 
 def delete_vps(vps_id, owner_id):
     conn = get_conn()
@@ -77,7 +77,7 @@ def delete_vps(vps_id, owner_id):
     conn.commit()
     conn.close()
 
-# --- FUNCIONES RESTANTES INTACTAS ---
+# --- FUNCIONES AUXILIARES ---
 def generate_random_string(length=12):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
@@ -179,7 +179,7 @@ def get_expiring_users(days_left=2):
     c.execute("SELECT tg_id, username, expiry_date FROM users WHERE expiry_date > ? AND expiry_date < ?", (now, limit))
     rows = c.fetchall()
     conn.close()
-    return rows
+    return [dict(r) for r in rows]
 
 def create_ticket(user_id, message):
     conn = get_conn()
