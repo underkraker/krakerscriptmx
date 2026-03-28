@@ -264,6 +264,7 @@ client = no
 socket = a:SO_REUSEADDR=1
 socket = l:TCP_NODELAY=1
 socket = r:TCP_NODELAY=1
+TIMEOUTclose = 0
 
 [dropbear-ssl]
 accept = $listen_port
@@ -322,57 +323,61 @@ function install_ws_python() {
     # Liberar el puerto si otro servicio (ej SSL) ya lo está usando
     liberar_puerto $ws_port
     
-    # Script WS Proxy Mejorado (Estilo ChumoGH)
+    # Script WS Proxy Mejorado v2.0 (Expert Gaming Edition)
     cat > /etc/gaming_vps/ws.py << EOF
-import socket, threading, sys
+import socket, threading, sys, time
 
 def forward(src, dst):
     while True:
         try:
-            data = src.recv(4096)
+            data = src.recv(8192)
             if not data: break
-            dst.send(data)
+            dst.sendall(data)
         except: break
 
 def handle_client(client_socket):
     try:
-        # PING/PONG y timeout de 0.5s para detectar SSH Puro vs Payload HTTP
-        client_socket.settimeout(0.5)
+        # Delay de 0.1s para permitir el descifrado SSL (Sync)
+        time.sleep(0.1)
+        client_socket.settimeout(1.2)
         try:
-            request = client_socket.recv(4096)
-        except socket.timeout:
+            request = client_socket.recv(8192)
+        except:
             request = b''
         client_socket.settimeout(None)
         
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         remote_socket.connect(('127.0.0.1', $dest_port))
         
-        # Mapeo universal (HTTP, WS o Pure SSH sin payload)
+        # Mapeo universal (WSS / WS / SSH)
         if request:
-            req_str = request.decode('utf-8', 'ignore')
-            if "Upgrade: websocket" in req_str.lower() or "upgrade: ws" in req_str.lower():
-                client_socket.send(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
-            elif "HTTP" in req_str or "CONNECT" in req_str or "GET" in req_str:
-                client_socket.send(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-            else:
-                remote_socket.send(request)
+            try:
+                req_str = request.decode('utf-8', 'ignore')
+                if "Upgrade: websocket" in req_str.lower() or "upgrade: ws" in req_str.lower():
+                    client_socket.sendall(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
+                elif "HTTP" in req_str or "CONNECT" in req_str:
+                    client_socket.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+                else:
+                    remote_socket.sendall(request)
+            except:
+                remote_socket.sendall(request)
             
-        threading.Thread(target=forward, args=(client_socket, remote_socket)).start()
-        threading.Thread(target=forward, args=(remote_socket, client_socket)).start()
+        threading.Thread(target=forward, args=(client_socket, remote_socket), daemon=True).start()
+        threading.Thread(target=forward, args=(remote_socket, client_socket), daemon=True).start()
     except:
-        client_socket.close()
+        try: client_socket.close()
+        except: pass
 
 try:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('0.0.0.0', $ws_port))
-    server.listen(100)
-    print("WS Iniciado en", $ws_port)
+    server.listen(500)
     while True:
         client_sock, addr = server.accept()
-        threading.Thread(target=handle_client, args=(client_sock,)).start()
-except Exception as e:
-    print("Error:", e)
+        threading.Thread(target=handle_client, args=(client_sock,), daemon=True).start()
+except:
+    pass
 EOF
     
     cat > /etc/systemd/system/ws-python.service <<EOF
