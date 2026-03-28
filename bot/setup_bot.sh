@@ -36,15 +36,20 @@ wget -qO config.py "https://raw.githubusercontent.com/underkraker/scriptgamer/ma
 wget -qO requirements.txt "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/requirements.txt"
 wget -qO migrate.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/migrate.py"
 
-# Instalar requerimientos
-echo -e "${CYAN}[*] Instalando librerías de Python...${NC}"
+# Instalar requerimientos en Entorno Virtual (VENV) - Profesional
+echo -e "${CYAN}[*] Creando Entorno Virtual (VENV)...${NC}"
+python3 -m venv venv
+source venv/bin/activate
+echo -e "${CYAN}[*] Instalando librerías de Python en el entorno...${NC}"
+pip3 install --upgrade pip > /dev/null 2>&1
 pip3 install -r requirements.txt > /dev/null 2>&1
+deactivate
 
-# Inicializar Base de Datos
+# Inicializar Base de Datos usando el VENV
 echo -e "${CYAN}[*] Inicializando Base de Datos y Migraciones...${NC}"
-python3 migrate.py > /dev/null 2>&1
+./venv/bin/python3 migrate.py > /dev/null 2>&1
 
-# Configurar Servicio Systemd
+# Configurar Servicio Systemd (Usando el binario del venv)
 echo -e "${CYAN}[*] Creando Servicio del Sistemavps-bot.service...${NC}"
 cat > /etc/systemd/system/vps-bot.service <<EOF
 [Unit]
@@ -55,7 +60,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/etc/gaming_vps/bot
-ExecStart=/usr/bin/python3 /etc/gaming_vps/bot/bot.py
+ExecStart=/etc/gaming_vps/bot/venv/bin/python3 /etc/gaming_vps/bot/bot.py
 Restart=always
 RestartSec=5
 
