@@ -327,7 +327,7 @@ function install_ws_python() {
     # Liberar el puerto si otro servicio (ej SSL) ya lo está usando
     liberar_puerto $ws_port
     
-    # Script WS Proxy Pro v6.0 (GOLD Master Edition)
+    # Script WS Proxy Pro v7.0 (Legacy Pure Edition)
     cat > /etc/gaming_vps/ws.py << EOF
 import socket, threading, time
 
@@ -346,8 +346,7 @@ def forward(src, dst):
 
 def handle_client(client_socket):
     try:
-        # Buffer de 128KB para evitar fragmentacion en SSL
-        client_socket.settimeout(5.0)
+        client_socket.settimeout(10.0)
         try:
             request = client_socket.recv(131072)
         except:
@@ -357,8 +356,10 @@ def handle_client(client_socket):
             client_socket.close()
             return
 
-        # Respuesta Profesional Inmediata
-        client_socket.sendall(b"HTTP/1.1 $ws_res\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
+        # Respuesta Atomica (Metodo ChumoGH / Legacy)
+        # Solo responde 101/200 OK con doble CRLF para maxima compatibilidad
+        if b"HTTP" in request or b"GET" in request or b"CONNECT" in request:
+            client_socket.sendall(b"HTTP/1.1 $ws_res\r\n\r\n")
 
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         remote_socket.connect(('127.0.0.1', $dest_port))
@@ -381,7 +382,7 @@ try:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('0.0.0.0', $ws_port))
-    server.listen(2000)
+    server.listen(2500)
     while True:
         client_sock, addr = server.accept()
         threading.Thread(target=handle_client, args=(client_sock,), daemon=True).start()
