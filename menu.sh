@@ -18,22 +18,25 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Función para mostrar el encabezado VIP
+# Función para mostrar el encabezado VIP (Dinámico Gamer Master)
 function header() {
     clear
+    local P_NAME="GAMER MASTER"
+    [ -f /etc/gaming_vps/panel_name.txt ] && P_NAME=$(cat /etc/gaming_vps/panel_name.txt | tr '[:lower:]' '[:upper:]')
+    
     echo -e "\n"
     echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "    ${MAGENTA}██████╗  █████╗ ███╗   ███╗███████╗██████╗${NC}"
-    echo -e "   ${MAGENTA}██╔════╝ ██╔══██╗████╗ ████║██╔════╝██╔══██╗${NC}"
-    echo -e "   ${MAGENTA}██║  ███╗███████║██╔████╔██║█████╗  ██████╔╝${NC}"
-    echo -e "   ${MAGENTA}██║   ██║██╔══██║██║╚██╔╝██║██╔══╝  ██╔══██╗${NC}"
-    echo -e "   ${MAGENTA}╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗██║  ██║${NC}"
-    echo -e "    ${MAGENTA}╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝${NC}"
+    # Banner Estilizado Dinámico
+    local len=${#P_NAME}
+    local spaces=$(( (50 - len) / 2 ))
+    local padding=""
+    for ((i=0; i<spaces; i++)); do padding+=" "; done
+    
+    echo -e "   ${MAGENTA}${BOLD}${padding}⚡ $P_NAME ⚡${NC}"
     echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
     if [ -f /etc/gaming_vps/slogan.txt ]; then
         M_SLOGAN=$(cat /etc/gaming_vps/slogan.txt)
-        # Centrar de forma simple usando espacios aproximados
         echo -e "         ${WHITE}${BOLD}🔥  $M_SLOGAN  🔥${NC}"
     else
         echo -e "         ${WHITE}${BOLD}🔥  V P S   P A N E L   P R O  🔥${NC}"
@@ -1269,18 +1272,20 @@ function main_menu() {
         CPU_LOAD=${CPU_LOAD%.*} # Quitar decimales
         [ -z "$CPU_LOAD" ] || [ "$CPU_LOAD" -lt 0 ] && CPU_LOAD="0"
 
-        # Listar puertos abiertos dinámicos, excluyendo basura del sistema
-        ACTIVOS=$(ss -tuln | awk '{print $5}' | cut -d: -f2 | grep -v '^$' | sort -u)
+        # Listar puertos abiertos dinámicos (Sin Basura)
+        ACTIVOS=$(netstat -tulnp | grep LISTEN | awk '{print $4}' | cut -d: -f2 | sort -u)
         PUERTOS_LIST=()
         
         for p in $ACTIVOS; do
-            # Filtro estricto de puertos NO 'basura' (Solo mostramos protocolos de tunnel conocidos)
+            # Mapeo Inteligente de Servicios
             case $p in
-                22) PUERTOS_LIST+=("${p}(SSH)") ;;
+                22) PUERTOS_LIST+=("22(SSH)") ;;
                 80|143|109) 
                     if pgrep -f "dropbear.*-p $p" >/dev/null; then PUERTOS_LIST+=("${p}(Drop)"); fi ;;
                 443|444|445) 
-                    if pgrep -f "stunnel4" >/dev/null; then PUERTOS_LIST+=("${p}(SSL)"); fi ;;
+                    if pgrep -f "stunnel4" >/dev/null; then PUERTOS_LIST+=("${p}(SSL)"); 
+                    elif pgrep -f "xray" >/dev/null; then PUERTOS_LIST+=("${p}(Xray)"); 
+                    elif pgrep -f "hysteria" >/dev/null; then PUERTOS_LIST+=("${p}(HY2)"); fi ;;
                 8080|3128) 
                     if pgrep -f "squid" >/dev/null; then PUERTOS_LIST+=("${p}(Sqd)"); fi ;;
                 7300|7400|7500) 
@@ -1288,30 +1293,20 @@ function main_menu() {
                 1194) 
                     if pgrep -f "openvpn" >/dev/null; then PUERTOS_LIST+=("${p}(OVPN)"); fi ;;
                 51820)
-                    if pgrep -f "wg-crypt-wg0" >/dev/null || [ -d /sys/class/net/wg0 ]; then PUERTOS_LIST+=("${p}(WG)"); fi ;;
+                    if [ -d /sys/class/net/wg0 ]; then PUERTOS_LIST+=("${p}(WG)"); fi ;;
                 53)
-                    if systemctl is-active --quiet slowdns; then PUERTOS_LIST+=("${p}(DNS)"); fi ;;
+                    if systemctl is-active --quiet slowdns || pgrep -f "dnstt-server" >/dev/null; then PUERTOS_LIST+=("${p}(DNS)"); fi ;;
                 8388)
                     if systemctl is-active --quiet shadowsocks-libev; then PUERTOS_LIST+=("${p}(SS)"); fi ;;
+                *)
+                    # Si no es un puerto estatico, checamos si es WS Python o Xray Custom
+                    if pgrep -f "ws.py" >/dev/null && netstat -tulnp | grep ":$p " | grep -q "python"; then
+                        PUERTOS_LIST+=("${p}(WS)")
+                    elif pgrep -f "xray" >/dev/null && netstat -tulnp | grep ":$p " | grep -q "xray"; then
+                        PUERTOS_LIST+=("${p}(Xray)")
+                    fi
+                    ;;
             esac
-            
-            # Caso especial para Hysteria 2 y Xray Multi-Port
-            if systemctl is-active --quiet hysteria && netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "hysteria"; then
-                PUERTOS_LIST+=("${p}(HY2)")
-            fi
-            
-            if systemctl is-active --quiet xray && netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "xray"; then
-                # Solo mostrar si es el puerto principal configurado por el usuario
-                PUERTOS_LIST+=("${p}(Xray)")
-            fi
-            
-            # Caso especial para el Python WS que puede estar en cualquier puerto
-            if [ "$p" != "22" ] && [ "$p" != "80" ] && [ "$p" != "443" ] && pgrep -f "ws.py" >/dev/null; then
-                 # Si el puerto $p es el puerto que escucha el servicio ws-python
-                 if netstat -tulnp 2>/dev/null | grep ":$p " | grep -q "python"; then
-                    PUERTOS_LIST+=("${p}(WS)")
-                 fi
-            fi
         done
 
         header

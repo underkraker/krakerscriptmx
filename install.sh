@@ -32,15 +32,20 @@ if [ -f /usr/bin/menu ]; then
     # Otorgar permisos de dueño y ejecución universal
     chmod +x /usr/bin/menu
     
-    # NUEVO: Pedir slogan del reseller
+    # NUEVO: Personalización de Marca Blanca (Nombre y Slogan)
     echo -e "\n${MAGENTA}======================================================${NC}"
     echo -e "${WHITE}${BOLD}      PERSONALIZACIÓN DE MARCA BLANCA${NC}"
     echo -e "${MAGENTA}======================================================${NC}"
-    echo -e "${CYAN}¿Qué nombre o slogan quieres que aparezca en el encabezado?${NC}"
-    echo -e -n "${YELLOW}(Presiona ENTER para dejar 'V P S  P A N E L  P R O'): ${NC}"
+    echo -e "${CYAN}¿Qué NOMBRE quieres para el encabezado ASCII?${NC}"
+    echo -e -n "${YELLOW}(Ej: UNDERKRAKER): ${NC}"
+    read P_NAME
+    
+    echo -e "\n${CYAN}¿Qué SLOGAN o sub-título quieres debajo?${NC}"
+    echo -e -n "${YELLOW}(Ej: VPS PREMIUM PRO): ${NC}"
     read SLOGAN
     
     mkdir -p /etc/gaming_vps
+    [ -n "$P_NAME" ] && echo "$P_NAME" > /etc/gaming_vps/panel_name.txt || echo "GAMER" > /etc/gaming_vps/panel_name.txt
     if [ -n "$SLOGAN" ]; then
         echo "$SLOGAN" > /etc/gaming_vps/slogan.txt
     else
