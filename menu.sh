@@ -312,18 +312,22 @@ function install_ws_python() {
     apt-get install -y python3 lsof > /dev/null 2>&1
     mkdir -p /etc/gaming_vps
     
-    echo -e -n "   ${CYAN}🔌 ¿En qué puerto abrirás el WebSocket? (Ej: 80 u 443):${NC} "
+    echo -e -n "   ${CYAN}🔌 ¿Puerto para WebSocket? (Ej: 8080):${NC} "
     read -r ws_port
-    [ -z "$ws_port" ] && ws_port=80
+    [ -z "$ws_port" ] && ws_port=8080
     
-    echo -e -n "   ${CYAN}🎯 ¿A qué puerto interno apuntará? (Ej: 22 - Tu Dropbear/SSH):${NC} "
+    echo -e -n "   ${CYAN}🎯 ¿Puerto Interno Destino (Target)? (Ej: 22):${NC} "
     read -r dest_port
     [ -z "$dest_port" ] && dest_port=22
+    
+    echo -e -n "   ${CYAN}📝 ¿Código de Respuesta HTTP? (Ej: 101 Switching Protocols):${NC} "
+    read -r ws_res
+    [ -z "$ws_res" ] && ws_res="101 Switching Protocols"
     
     # Liberar el puerto si otro servicio (ej SSL) ya lo está usando
     liberar_puerto $ws_port
     
-    # Script WS Proxy Hyper-Flow v4.0 (Professional Edition)
+    # Script WS Proxy Pro v5.0 (Professional Interactive Edition)
     cat > /etc/gaming_vps/ws.py << EOF
 import socket, threading, time, hashlib, base64
 
@@ -381,20 +385,20 @@ def handle_client(client_socket):
         
         req_str = header_data.decode('utf-8', 'ignore')
         
-        if "upgrade: websocket" in req_str.lower():
+        if "http" in req_str.lower() or "connect" in req_str.lower() or "upgrade" in req_str.lower():
             key = ""
             for line in req_str.split("\r\n"):
                 if "sec-websocket-key:" in line.lower():
                     key = line.split(":")[1].strip()
             
-            res = "HTTP/1.1 101 Switching Protocols\r\n"
+            res = "HTTP/1.1 $ws_res\r\n"
             res += "Upgrade: websocket\r\n"
             res += "Connection: Upgrade\r\n"
             if key: res += "Sec-WebSocket-Accept: " + get_accept(key) + "\r\n"
             res += "\r\n"
             client_socket.sendall(res.encode())
-        elif "http" in req_str.lower() or "connect" in req_str.lower():
-            client_socket.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+        else:
+            remote_socket.sendall(request)
         
         # Reenviar los datos extra (SSH Handshake) al servidor remoto
         if extra_data:
