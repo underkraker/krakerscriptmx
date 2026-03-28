@@ -323,9 +323,13 @@ function install_ws_python() {
     # Liberar el puerto si otro servicio (ej SSL) ya lo está usando
     liberar_puerto $ws_port
     
-    # Script WS Proxy Mejorado v2.0 (Expert Gaming Edition)
+    # Script WS Proxy Pro v3.0 (Anti-Disconnect Edition)
     cat > /etc/gaming_vps/ws.py << EOF
-import socket, threading, sys, time
+import socket, threading, sys, time, hashlib, base64
+
+def get_accept(key):
+    guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+    return base64.b64encode(hashlib.sha1((key + guid).encode()).digest()).decode()
 
 def forward(src, dst):
     while True:
@@ -337,30 +341,46 @@ def forward(src, dst):
 
 def handle_client(client_socket):
     try:
-        # Delay de 0.1s para permitir el descifrado SSL (Sync)
         time.sleep(0.1)
-        client_socket.settimeout(1.2)
+        client_socket.settimeout(3.0)
         try:
             request = client_socket.recv(8192)
         except:
             request = b''
-        client_socket.settimeout(None)
         
+        if not request:
+            client_socket.close()
+            return
+
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        remote_socket.connect(('127.0.0.1', $dest_port))
+        try:
+            remote_socket.connect(('127.0.0.1', $dest_port))
+        except:
+            # Reintento automático al puerto SSH nativo si el dest_port falla
+            try: remote_socket.connect(('127.0.0.1', 22))
+            except: 
+                client_socket.close()
+                return
+
+        client_socket.settimeout(None)
+        req_str = request.decode('utf-8', 'ignore')
         
-        # Mapeo universal (WSS / WS / SSH)
-        if request:
-            try:
-                req_str = request.decode('utf-8', 'ignore')
-                if "Upgrade: websocket" in req_str.lower() or "upgrade: ws" in req_str.lower():
-                    client_socket.sendall(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
-                elif "HTTP" in req_str or "CONNECT" in req_str:
-                    client_socket.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-                else:
-                    remote_socket.sendall(request)
-            except:
-                remote_socket.sendall(request)
+        if "Upgrade: websocket" in req_str.lower():
+            key = ""
+            for line in req_str.split("\r\n"):
+                if "Sec-WebSocket-Key:" in line:
+                    key = line.split(":")[1].strip()
+            
+            res = "HTTP/1.1 101 Switching Protocols\r\n"
+            res += "Upgrade: websocket\r\n"
+            res += "Connection: Upgrade\r\n"
+            if key: res += "Sec-WebSocket-Accept: " + get_accept(key) + "\r\n"
+            res += "\r\n"
+            client_socket.sendall(res.encode())
+        elif "HTTP" in req_str or "CONNECT" in req_str:
+            client_socket.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+        else:
+            remote_socket.sendall(request)
             
         threading.Thread(target=forward, args=(client_socket, remote_socket), daemon=True).start()
         threading.Thread(target=forward, args=(remote_socket, client_socket), daemon=True).start()
@@ -372,7 +392,7 @@ try:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('0.0.0.0', $ws_port))
-    server.listen(500)
+    server.listen(1000)
     while True:
         client_sock, addr = server.accept()
         threading.Thread(target=handle_client, args=(client_sock,), daemon=True).start()
