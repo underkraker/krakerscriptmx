@@ -20,12 +20,13 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # ======================================================
-# 🧹 ANTI-DUPLICADOS (HARD RESET)
+# 🧹 ANTI-DUPLICADOS (MODO EXTERMINADOR)
 # ======================================================
-echo -e "\n${CYAN}[*] Limpiando procesos duplicados antiguos...${NC}"
+echo -e "\n${CYAN}[*] Exterminando procesos duplicados y zombies...${NC}"
 systemctl stop vps-bot >/dev/null 2>&1
 pkill -9 -f bot.py >/dev/null 2>&1
 pkill -9 -f venv/bin/python3 >/dev/null 2>&1
+killall -9 python3 >/dev/null 2>&1
 fuser -k 5000/tcp >/dev/null 2>&1
 # ======================================================
 
@@ -38,13 +39,14 @@ apt-get install -y python3 python3-pip python3-venv sqlite3 screen lsof > /dev/n
 mkdir -p /etc/gaming_vps/bot
 cd /etc/gaming_vps/bot
 
-# Descargar archivos (desde el mismo repo scriptgamer)
-echo -e "${CYAN}[*] Descargando archivos del Bot...${NC}"
-wget -qO bot.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/bot.py"
-wget -qO database.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/database.py"
-wget -qO config.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/config.py"
-wget -qO requirements.txt "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/requirements.txt"
-wget -qO migrate.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/migrate.py"
+# Descargar archivos con BYPASS DE CACHÉ
+echo -e "${CYAN}[*] Descargando archivos del Bot (Forzando última versión)...${NC}"
+T=$(date +%s)
+wget -qO bot.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/bot.py?t=$T"
+wget -qO database.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/database.py?t=$T"
+wget -qO config.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/config.py?t=$T"
+wget -qO requirements.txt "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/requirements.txt?t=$T"
+wget -qO migrate.py "https://raw.githubusercontent.com/underkraker/scriptgamer/main/bot/migrate.py?t=$T"
 
 # Instalar requerimientos en Entorno Virtual (VENV) - Profesional
 echo -e "${CYAN}[*] Creando Entorno Virtual (VENV)...${NC}"
