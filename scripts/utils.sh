@@ -83,13 +83,13 @@ EOF
 
 get_active_ports() {
     local ports=""
-    # Check common ports with lsof (TCP)
+    # Check TCP ports
     for p in 80 443 143 442 2083 2087 2053; do
-        [[ $(lsof -Pi :$p -sTCP:LISTEN -t 2>/dev/null) ]] && ports+="$p "
+        ss -ntlp | grep -q ":$p " && ports+="$p "
     done
-    # Check UDP ports (BadVPN)
+    # Check UDP ports (BadVPN/Gaming)
     for p in 7100 7200 7300; do
-        [[ $(lsof -n -iUDP:$p -t 2>/dev/null) ]] && ports+="$p "
+        ss -nulp | grep -q ":$p " && ports+="$p "
     done
     echo "$ports"
 }

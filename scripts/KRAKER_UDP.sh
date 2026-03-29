@@ -20,7 +20,14 @@ tune_network() {
 install_badvpn() {
     echo -e "${YELLOW}[2/3] Instalando BadVPN udpgw...${NC}"
     if [[ ! -f /usr/bin/badvpn-udpgw ]]; then
-        wget -O /usr/bin/badvpn-udpgw "https://github.com/ambrop72/badvpn/releases/download/1.999.130/badvpn-linux-x86_64" > /dev/null 2>&1
+        local arch=$(uname -m)
+        local url="https://github.com/ambrop72/badvpn/releases/download/1.999.130/badvpn-linux-x86_64"
+        
+        if [[ $arch == "aarch64" || $arch == "arm64" ]]; then
+            url="https://github.com/itxtutor/badvpn/raw/master/badvpn-udpgw-arm64"
+        fi
+        
+        wget -O /usr/bin/badvpn-udpgw "$url" > /dev/null 2>&1
         chmod +x /usr/bin/badvpn-udpgw
     fi
 }
