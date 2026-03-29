@@ -6,14 +6,11 @@
 
 import socket, threading, ssl, sys, select, time
 
-# Configuración KRAKER VPS
-LISTENING_ADDR = '0.0.0.0'
-REMOTE_ADDR = '127.0.0.1'
-REMOTE_PORT = 80 # Redirección fija a SSH/Dropbear
-BUFFER_SIZE = 8192
-HANDSHAKE_TIMEOUT = 0.5 # Tiempo para detectar si es WS o Directo
+# Configuración KRAKER MASTER
+BUFFER_SIZE = 16384
+HANDSHAKE_TIMEOUT = 1.0 # Mayor tiempo para conexiones lentas
 
-# Respuesta Handshake WebSocket (KRAKER VPS)
+# Respuesta Handshake WebSocket
 WS_RESPONSE = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n"
 
 def transfer(src, dst):
@@ -29,9 +26,9 @@ def transfer(src, dst):
         try: dst.close()
         except: pass
 
-def handler(client_socket, address):
+def handler(client_socket, address, target_addr, target_port):
     try:
-        # 1. Intentar detectar si el cliente envía datos inmediatamente (WebSocket/Payload)
+        # Detectar WebSocket/Payload
         client_socket.setblocking(False)
         time.sleep(HANDSHAKE_TIMEOUT)
         
@@ -39,39 +36,37 @@ def handler(client_socket, address):
         try:
             data = client_socket.recv(BUFFER_SIZE)
             if data:
-                # Si empieza con un método HTTP, es WebSocket/Payload
                 if any(data.startswith(m) for m in [b"GET", b"POST", b"CONNECT", b"HEAD"]):
                     is_websocket = True
                     client_socket.sendall(WS_RESPONSE.encode())
-                    print(f"[+] KRAKER VPS - [WS MODE] - Client: {address[0]}")
-                else:
-                    # Datos iniciales presentes pero no son HTTP (Raro en SSL, pero posible)
-                    # Lo enviamos al SSH directamente
-                    pass
+                # Si no es WS, guardamos los datos para enviarlos al backend
         except BlockingIOError:
-            # No hay datos inmediatos -> Modo SSL Directo (SNI Pure)
-            print(f"[+] KRAKER VPS - [DIRECT MODE] - Client: {address[0]}")
             data = b""
 
         client_socket.setblocking(True)
 
-        # 2. Conectar al SSH (Puerto 80)
+        # Conectar al Backend (SSH/Dropbear)
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        remote_socket.connect((REMOTE_ADDR, REMOTE_PORT))
-        
-        # 3. Si teníamos datos (que no eran el handshake WS), los enviamos al SSH
+        remote_socket.settimeout(3.0)
+        try:
+            remote_socket.connect((target_addr, int(target_port)))
+        except Exception as e:
+            # Si el backend falla, cerramos la conexión del cliente
+            client_socket.close()
+            return
+
+        # Si teníamos datos iniciales (no WS), los enviamos
         if data and not is_websocket:
             remote_socket.sendall(data)
 
-        # 4. Iniciar Puente Bidireccional
+        # Iniciar Puente
         threading.Thread(target=transfer, args=(client_socket, remote_socket), daemon=True).start()
-        threading.Thread(target=transfer, args=(remote_socket, client_socket), daemon=True).start()
+        transfer(remote_socket, client_socket)
 
-    except Exception as e:
-        # print(f"[!] Error: {e}")
+    except:
         pass
 
-def main(port, cert, key):
+def main(port, cert, key, target_addr, target_port):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certfile=cert, keyfile=key)
 
@@ -79,26 +74,25 @@ def main(port, cert, key):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     
     try:
-        server.bind((LISTENING_ADDR, int(port)))
-        server.listen(200)
-        
+        server.bind(('0.0.0.0', int(port)))
+        server.listen(1000)
         secure_server = context.wrap_socket(server, server_side=True)
-        print(f"[*] KRAKER VPS - Gateway Dual Activo en Puerto {port}")
-        print(f"[*] Modo: WS + SSL Direct | Destino: SSH Port {REMOTE_PORT}")
+        print(f"[*] KRAKER MASTER - Gateway Dual Activo en Puerto {port}")
+        print(f"[*] Destino: {target_addr}:{target_port}")
         
     except Exception as e:
-        print(f"[!] Error al iniciar Gateway: {e}")
+        print(f"[!] Error: {e}")
         sys.exit(1)
 
     while True:
         try:
             client, addr = secure_server.accept()
-            threading.Thread(target=handler, args=(client, addr), daemon=True).start()
+            threading.Thread(target=handler, args=(client, addr, target_addr, target_port), daemon=True).start()
         except:
             pass
 
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
-        print("Uso: python3 KRAKER_SSL_Gateway.py <puerto> <cert> <key>")
+    if len(sys.argv) < 6:
+        print("Uso: python3 KRAKER_SSL_Gateway.py <port> <cert> <key> <target_addr> <target_port>")
         sys.exit(1)
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

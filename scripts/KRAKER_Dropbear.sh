@@ -14,6 +14,7 @@ install_deps dropbear coreutils ufw lsof
 echo -e "${YELLOW}[*] Configurando Puertos 80, 143, 442 y Banner...${NC}"
 
 # Liberar puerto 80 si algo lo usa
+systemctl stop apache2 nginx > /dev/null 2>&1
 fuser -k 80/tcp > /dev/null 2>&1
 
 cat << EOF > /etc/default/dropbear
