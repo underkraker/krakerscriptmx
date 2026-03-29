@@ -26,7 +26,8 @@ SHORT_ID=$(head /dev/urandom | tr -dc 'a-f0-9' | head -c 8)
 IP_PUB=$(get_ip)
 
 # 4. Interactivity (SNI Bug)
-BUG=$(get_sni_choice)
+read -p "Ingresa el SNI Bug para REALITY: " BUG
+[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
 # Port Selection (Priority 443)
 PORT=443
@@ -35,7 +36,9 @@ if lsof -Pi :443 -sTCP:LISTEN -t >/dev/null ; then
     echo -e "${YELLOW}Aviso: Puerto 443 ocupado. Usando: $PORT${NC}"
 fi
 
-# 5. Configuration (JSON)
+# 3. Config & Certs
+read -p "Ingresa el SNI Bug para Hysteria: " BUG
+[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 cat > /usr/local/etc/xray/config.json <<EOF
 {
     "log": {"loglevel": "warning"},

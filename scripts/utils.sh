@@ -93,22 +93,3 @@ get_active_ports() {
     done
     echo "$ports"
 }
-
-get_sni_choice() {
-    local default_snib="www.google.com"
-    echo -e "${YELLOW}[!] Selecciona el tipo de SNI Bug:${NC}"
-    echo -e "  ${GREEN}[1]${NC} ${WHITE}Universal SNI ($default_snib - Alta Compatibilidad)${NC}"
-    echo -e "  ${GREEN}[2]${NC} ${WHITE}Custom SNI (Ingresar manualmente)${NC}"
-    echo -e "${BARRA}"
-    read -p "Opción [1]: " SNI_OPT
-    
-    local rbug=""
-    if [[ $SNI_OPT == "2" ]]; then
-        read -p "Ingresa el SNI Bug: " rbug
-        [[ -z $rbug ]] && rbug="$default_snib"
-    else
-        rbug="$default_snib"
-        echo -e "${GREEN}[*] Usando Universal SNI: $rbug${NC}"
-    fi
-    echo "$rbug"
-}

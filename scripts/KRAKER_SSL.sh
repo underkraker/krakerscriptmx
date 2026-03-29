@@ -7,7 +7,9 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 setup_protocol() {
-    BUG=$(get_sni_choice)
+    msg_header "SSL GATEWAY (DUAL)"
+    read -p "Ingresa el SNI Bug de tu compañía: " BUG
+    [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
     # 1. Liberar puerto 443 (donde escucha el Gateway)
     echo -e "${YELLOW}[*] Liberando puerto 443 y deteniendo conflictos...${NC}"
