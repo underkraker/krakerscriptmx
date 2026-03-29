@@ -1,5 +1,5 @@
-#!/bin/bash
-# Instalador Automático de Gaming VPS Script
+﻿#!/bin/bash
+# Instalador AutomÃ¡tico de Gaming VPS Script
 
 # Definir Colores
 RED='\033[0;31m'
@@ -15,24 +15,24 @@ echo -e "${CYAN}${BOLD}======================================================${N
 
 # Validar ROOT
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}❌ Error: Por favor, ejecuta el instalador como ROOT (sudo su o sudo bash).${NC}"
+  echo -e "${RED}âŒ Error: Por favor, ejecuta el instalador como ROOT (sudo su o sudo bash).${NC}"
   exit 1
 fi
 
 # Actualizar e instalar base
 echo -e "\n${CYAN}[*] Instalando dependencias base en el VPS...${NC}"
 apt-get update -y > /dev/null 2>&1
-apt-get install -y wget curl jq net-tools iproute2 cron ca-certificates iptables > /dev/null 2>&1
+apt-get install -y wget curl jq git net-tools iproute2 cron ca-certificates iptables > /dev/null 2>&1
 
-# NUEVO: Módulo de Seguridad Maestro
+# NUEVO: MÃ³dulo de Seguridad Maestro
 echo -e "\n${CYAN}======================================================${NC}"
-echo -e "${WHITE}${BOLD}      INGRESA TU KEY DE INSTALACIÓN${NC}"
+echo -e "${WHITE}${BOLD}      INGRESA TU KEY DE INSTALACIÃ“N${NC}"
 echo -e "${CYAN}======================================================${NC}"
 echo -e -n "${YELLOW}KEY: ${NC}"
 read USER_KEY
 
 if [ -z "$USER_KEY" ]; then
-    echo -e "${RED}❌ Error: La KEY no puede estar vacía.${NC}"
+    echo -e "${RED}âŒ Error: La KEY no puede estar vacÃ­a.${NC}"
     exit 1
 fi
 
@@ -43,56 +43,42 @@ STATUS=$(echo "$RESPONSE" | jq -r '.status')
 
 if [ "$STATUS" == "success" ]; then
     OWNER=$(echo "$RESPONSE" | jq -r '.owner')
-    echo -e "${GREEN}✅ ACCESO CONCEDIDO: Bienvenido @$OWNER${NC}"
+    echo -e "${GREEN}âœ… ACCESO CONCEDIDO: Bienvenido @$OWNER${NC}"
     sleep 2
 else
-    echo -e "${RED}❌ ACCESO DENEGADO: Key inválida o ya utilizada.${NC}"
+    echo -e "${RED}âŒ ACCESO DENEGADO: Key invÃ¡lida o ya utilizada.${NC}"
     echo -e "${RED}Contacta a @underkraker para adquirir una licencia.${NC}"
     exit 1
 fi
 
 # Despliegue Directo de Marca Blanca
-echo -e "\n${CYAN}[*] Iniciando despliegue de Marca Blanca v11.0 (Sin restricciones)...${NC}"
+# Despliegue de la Suite KRAKER MASTER
+echo -e "\n\[*] Iniciando despliegue de la Suite Modular v12.0...\"
+DIR_BASE="/etc/gaming_vps"
+mkdir -p $DIR_BASE
+echo -e "\[*] Sincronizando repositorio con la VPS...\"
+rm -rf $DIR_BASE/* > /dev/null 2>&1
+git clone https://github.com/underkraker/scriptgamer $DIR_BASE > /dev/null 2>&1
 
-# Descargar el menú desde GitHub (Bypass caché)
-echo -e "${CYAN}[*] Descargando Panel desde el repositorio de GitHub...${NC}"
-wget -qO /usr/bin/menu "https://raw.githubusercontent.com/underkraker/scriptgamer/main/menu.sh?t=$(date +%s)"
-
-if [ -f /usr/bin/menu ]; then
-    # Otorgar permisos de dueño y ejecución universal
-    chmod +x /usr/bin/menu
+if [ -f $DIR_BASE/menu.sh ]; then
+    chmod +x $DIR_BASE/menu.sh $DIR_BASE/scripts/*.sh
+    ln -sf $DIR_BASE/menu.sh /usr/bin/menu
     
-    # NUEVO: Personalización de Marca Blanca (Nombre y Slogan)
-    echo -e "\n${MAGENTA}======================================================${NC}"
-    echo -e "${WHITE}${BOLD}      PERSONALIZACIÓN DE MARCA BLANCA${NC}"
-    echo -e "${MAGENTA}======================================================${NC}"
-    echo -e "${CYAN}¿Qué NOMBRE quieres para el encabezado ASCII?${NC}"
-    echo -e -n "${YELLOW}(Ej: UNDERKRAKER): ${NC}"
-    read P_NAME
+    # Personalización
+    echo -e "\n\======================================================\"
+    echo -e "\\      PERSONALIZACIÓN KRAKER MASTER\"
+    echo -e "\======================================================\"
+    read -p "¿Nombre para el Panel? (Ej: KRAKER): " P_NAME
+    read -p "¿Eslogan? (Ej: PREMIUM): " SLOGAN
+    [ -n "" ] && echo "" > $DIR_BASE/panel_name.txt || echo "KRAKER" > $DIR_BASE/panel_name.txt
+    [ -n "" ] && echo "" > $DIR_BASE/slogan.txt
     
-    echo -e "\n${CYAN}¿Qué SLOGAN o sub-título quieres debajo?${NC}"
-    echo -e -n "${YELLOW}(Ej: VPS PREMIUM PRO): ${NC}"
-    read SLOGAN
-    
-    mkdir -p /etc/gaming_vps
-    [ -n "$P_NAME" ] && echo "$P_NAME" > /etc/gaming_vps/panel_name.txt || echo "GAMER" > /etc/gaming_vps/panel_name.txt
-    if [ -n "$SLOGAN" ]; then
-        echo "$SLOGAN" > /etc/gaming_vps/slogan.txt
-    else
-        rm -f /etc/gaming_vps/slogan.txt
-    fi
-    
-    # NUEVO: Activar Seguridad Automática por defecto
-    echo -e "${CYAN}[*] Configurando Auto-Kill y Limpieza de RAM...${NC}"
-    # Ejecutar funciones internas de seguridad del menu.sh silenciosamente
-    bash -c "source /usr/bin/menu && setup_autokill > /dev/null 2>&1 && setup_auto_clean > /dev/null 2>&1"
-    
-    echo -e "\n${GREEN}${BOLD}[✔] INSTALACIÓN COMPLETADA CON ÉXITO.${NC}"
-    echo -e "${CYAN}======================================================${NC}"
-    echo -e " 🎮 A partir de ahora, solo escribe el comando: ${GREEN}${BOLD}menu${NC}"
-    echo -e " en cualquier parte de la consola para abrir tu panel."
-    echo -e "${CYAN}======================================================${NC}\n"
+    echo -e "\n\\[✔] INSTALACIÓN COMPLETADA.\"
+    echo -e "Escribe '\menu\' para comenzar."
 else
-    echo -e "${RED}[x] Error catastrófico: No se pudo conectar a GitHub o el archivo no existe.${NC}"
-    echo -e "Revisa tu conexión o asegúrate de que el repositorio sea público."
+    echo -e "\[x] Error al descargar los archivos.\"
+    exit 1
+fi
+    echo -e "${RED}[x] Error catastrÃ³fico: No se pudo conectar a GitHub o el archivo no existe.${NC}"
+    echo -e "Revisa tu conexiÃ³n o asegÃºrate de que el repositorio sea pÃºblico."
 fi
