@@ -1,32 +1,14 @@
 #!/bin/bash
-# KRAKER VPS - UDP GAMING (BadVPN)
+# KRAKER MASTER - UDP GAMING (BadVPN)
 # Versión Auditada y Estandarizada
 
-AZUL="\033[1;34m" && VERDE="\033[1;32m" && ROJO="\033[1;31m" && AMARILLO="\033[1;33m" && CYAN="\033[1;36m" && RESET="\033[0m"
-BARRA="${ROJO}======================================================${RESET}"
-
-msg_header() {
-    clear
-    echo -e "${BARRA}"
-    echo -e "${AZUL}    🐲 KRAKER VPS - UDP GAMING OPTIMIZER 🐲${RESET}"
-    echo -e "${BARRA}"
-}
-
-setup_banner() {
-    cat << 'EOF' > /etc/motd
-  ██╗  ██╗██████╗  █████╗ ██╗  ██╗███████╗██████╗     ██╗   ██╗██████╗ ███████╗
-  ██║ ██╔╝██╔══██╗██╔══██╗██║ ██╔╝██╔════╝██╔══██╗    ██║   ██║██╔══██╗██╔════╝
-  █████╔╝ ██████╔╝███████║█████╔╝ █████╗  ██████╔╝    ██║   ██║██████╔╝███████╗
-  ██╔═██╗ ██╔══██╗██╔══██║██╔═██╗ ██╔══╝  ██╔══██╗    ╚██╗ ██╔╝██╔═══╝ ╚════██║
-  ██║  ██╗██║  ██║██║  ██║██║  ██╗███████╗██║  ██║     ╚████╔╝ ██║     ████████║
-  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝      ╚═══╝  ╚═╝     ╚══════╝
-                               BIENVENIDO A KRAKER VPS
-EOF
-}
+# Cargar Librerías
+SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+[[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 # 1. Optimización Kernel BBR
 tune_network() {
-    echo -e "${AMARILLO}[1/3] Aplicando BBR y Tunings de Gaming...${RESET}"
+    echo -e "${YELLOW}[1/3] Aplicando BBR y Tunings de Gaming...${NC}"
     if ! sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"; then
         echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
         echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
@@ -36,20 +18,24 @@ tune_network() {
 
 # 2. Instalación BadVPN
 install_badvpn() {
-    echo -e "${AMARILLO}[2/3] Instalando BadVPN udpgw...${RESET}"
-    wget -O /usr/bin/badvpn-udpgw "https://github.com/ambrop72/badvpn/releases/download/1.999.130/badvpn-linux-x86_64" > /dev/null 2>&1
-    chmod +x /usr/bin/badvpn-udpgw
+    echo -e "${YELLOW}[2/3] Instalando BadVPN udpgw...${NC}"
+    if [[ ! -f /usr/bin/badvpn-udpgw ]]; then
+        wget -O /usr/bin/badvpn-udpgw "https://github.com/ambrop72/badvpn/releases/download/1.999.130/badvpn-linux-x86_64" > /dev/null 2>&1
+        chmod +x /usr/bin/badvpn-udpgw
+    fi
 }
 
 # 3. Servicio Systemd
 create_service() {
-    echo -e "${AMARILLO}[3/3] Iniciando Sistema de Prioridad Alta...${RESET}"
+    echo -e "${YELLOW}[3/3] Iniciando Sistema de Prioridad Alta...${NC}"
     cat << 'EOF' > /etc/systemd/system/kraker-udp.service
 [Unit]
-Description=KRAKER VPS - UDP Gateway
+Description=KRAKER MASTER - UDP Gateway
 After=network.target
 
 [Service]
+Type=simple
+User=root
 ExecStart=/usr/bin/badvpn-udpgw --listen-addr 0.0.0.0:7100 --max-clients 500 --listen-addr 0.0.0.0:7200 --max-clients 500 --listen-addr 0.0.0.0:7300 --max-clients 500
 Restart=always
 Nice=-20
@@ -64,12 +50,13 @@ EOF
     systemctl restart kraker-udp > /dev/null 2>&1
 }
 
-msg_header
-setup_banner
+msg_header "UDP GAMING OPTIMIZER"
+install_deps wget coreutils
+setup_motd
 tune_network
 install_badvpn
 create_service
 
-echo -e "${VERDE}✔ KRAKER UDP GAMING ACTIVADO!${RESET}"
-echo -e "${CYAN}Puertos: 7100, 7200, 7300${RESET}"
+echo -e "${GREEN}✔ KRAKER UDP GAMING ACTIVADO!${NC}"
+echo -e "${CYAN}Puertos: 7100, 7200, 7300${NC}"
 echo -e "${BARRA}"

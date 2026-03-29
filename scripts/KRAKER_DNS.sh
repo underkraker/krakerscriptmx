@@ -1,40 +1,25 @@
 #!/bin/bash
-# KRAKER VPS - SLOWDNS (DNSTT)
+# KRAKER MASTER - SLOWDNS (DNSTT)
 # Versión Auditada y Estandarizada
 
-AZUL="\033[1;34m" && VERDE="\033[1;32m" && ROJO="\033[1;31m" && AMARILLO="\033[1;33m" && RESET="\033[0m"
-BARRA="${ROJO}======================================================${RESET}"
-
-msg_header() {
-    clear
-    echo -e "${BARRA}"
-    echo -e "${AZUL}    🐲 KRAKER VPS - EXTREME SLOWDNS 🐲${RESET}"
-    echo -e "${BARRA}"
-}
-
-setup_banner() {
-    cat << 'EOF' > /etc/motd
-  ██╗  ██╗██████╗  █████╗ ██╗  ██╗███████╗██████╗     ██╗   ██╗██████╗ ███████╗
-  ██║ ██╔╝██╔══██╗██╔══██╗██║ ██╔╝██╔════╝██╔══██╗    ██║   ██║██╔══██╗██╔════╝
-  █████╔╝ ██████╔╝███████║█████╔╝ █████╗  ██████╔╝    ██║   ██║██████╔╝███████╗
-  ██╔═██╗ ██╔══██╗██╔══██║██╔═██╗ ██╔══╝  ██╔══██╗    ╚██╗ ██╔╝██╔═══╝ ╚════██║
-  ██║  ██╗██║  ██║██║  ██║██║  ██╗███████╗██║  ██║     ╚████╔╝ ██║     ████████║
-  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝      ╚═══╝  ╚═╝     ╚══════╝
-                               BIENVENIDO A KRAKER VPS
-EOF
-}
+# Cargar Librerías
+SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+[[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 # 1. Instalar Dependencias y DNSTT
 install_dnstt() {
-    echo -e "${AMARILLO}[1/4] Instalando Dependencias y Xray...${RESET}"
-    apt update -y && apt install -y curl wget iptables ufw coreutils > /dev/null 2>&1
-    wget -O /usr/bin/dnstt-server "https://github.com/google/dnstt/releases/download/v20220210/dnstt-server-linux-amd64" > /dev/null 2>&1
-    chmod +x /usr/bin/dnstt-server
+    echo -e "${YELLOW}[1/4] Instalando Dependencias y DNSTT Server...${NC}"
+    install_deps curl wget iptables ufw coreutils
+    
+    if [[ ! -f /usr/bin/dnstt-server ]]; then
+        wget -O /usr/bin/dnstt-server "https://github.com/google/dnstt/releases/download/v20220210/dnstt-server-linux-amd64" > /dev/null 2>&1
+        chmod +x /usr/bin/dnstt-server
+    fi
 }
 
 # 2. Generar Llaves
 generate_keys() {
-    echo -e "${AMARILLO}[2/4] Generando Llaves KRAKER DNS...${RESET}"
+    echo -e "${YELLOW}[2/4] Generando Llaves KRAKER DNS...${NC}"
     mkdir -p /etc/kraker_dns
     /usr/bin/dnstt-server -gen-key -pub /etc/kraker_dns/server.pub -priv /etc/kraker_dns/server.key > /dev/null 2>&1
     PUB_KEY=$(cat /etc/kraker_dns/server.pub)
@@ -42,7 +27,7 @@ generate_keys() {
 
 # 3. Configurar Firewall
 setup_network() {
-    echo -e "${AMARILLO}[3/4] Configurando Puerto 53 UDP...${RESET}"
+    echo -e "${YELLOW}[3/4] Configurando Puerto 53 UDP (SlowDNS)...${NC}"
     systemctl stop systemd-resolved > /dev/null 2>&1
     systemctl disable systemd-resolved > /dev/null 2>&1
     iptables -I INPUT -p udp --dport 53 -j ACCEPT
@@ -51,9 +36,10 @@ setup_network() {
 
 # 4. Crear Servicio
 create_service() {
+    echo -e "${YELLOW}[4/4] Creando Servicio KRAKER-DNS...${NC}"
     cat << EOF > /etc/systemd/system/kraker-dns.service
 [Unit]
-Description=KRAKER VPS - SlowDNS
+Description=KRAKER MASTER - SlowDNS
 After=network.target
 
 [Service]
@@ -68,13 +54,15 @@ EOF
     systemctl restart kraker-dns > /dev/null 2>&1
 }
 
-msg_header
-setup_banner
+msg_header "EXTREME SLOWDNS SETUP"
+setup_motd
 install_dnstt
 generate_keys
 setup_network
 create_service
 
-echo -e "${VERDE}✔ KRAKER DNS (SlowDNS) ACTIVADO!${RESET}"
-echo -e "${YELLOW}Public Key:${RESET} $PUB_KEY"
+echo -e "${GREEN}✔ KRAKER DNS (SlowDNS) ACTIVADO!${NC}"
+echo -e "${YELLOW}Public Key:${NC} $PUB_KEY"
+echo -e "${BARRA}"
+echo -e "${CYAN}Nota: Recuerda configurar los NS records en tu dominio.${NC}"
 echo -e "${BARRA}"

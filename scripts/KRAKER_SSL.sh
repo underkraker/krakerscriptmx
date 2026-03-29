@@ -1,33 +1,14 @@
 #!/bin/bash
-# KRAKER VPS - SSL GATEWAY MANAGER
+# KRAKER MASTER - SSL GATEWAY MANAGER
 # Gestión Avanzada de Protocolos SSL (Dual Mode: WS + Direct)
 
-# Colores y UI Header
-AZUL="\033[1;34m" && VERDE="\033[1;32m" && ROJO="\033[1;31m" && AMARILLO="\033[1;33m" && RESET="\033[0m"
-BARRA="${ROJO}======================================================${RESET}"
-
-msg_header() {
-    clear
-    echo -e "${BARRA}"
-    echo -e "${AZUL}    🐲 KRAKER VPS - SSL GATEWAY (DUAL) 🐲${RESET}"
-    echo -e "${BARRA}"
-}
-
-setup_banner() {
-    cat << 'EOF' > /etc/motd
-  ██╗  ██╗██████╗  █████╗ ██╗  ██╗███████╗██████╗     ██╗   ██╗██████╗ ███████╗
-  ██║ ██╔╝██╔══██╗██╔══██╗██║ ██╔╝██╔════╝██╔══██╗    ██║   ██║██╔══██╗██╔════╝
-  █████╔╝ ██████╔╝███████║█████╔╝ █████╗  ██████╔╝    ██║   ██║██████╔╝███████╗
-  ██╔═██╗ ██╔══██╗██╔══██║██╔═██╗ ██╔══╝  ██╔══██╗    ╚██╗ ██╔╝██╔═══╝ ╚════██║
-  ██║  ██╗██║  ██║██║  ██║██║  ██╗███████╗██║  ██║     ╚████╔╝ ██║     ████████║
-  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝      ╚═══╝  ╚═╝     ╚══════╝
-                               BIENVENIDO A KRAKER VPS
-EOF
-}
+# Cargar Librerías
+SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+[[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 setup_protocol() {
-    msg_header
-    echo -e "${AMARILLO}[!] Configurando SSL Gateway (KRAKER VPS)...${RESET}"
+    msg_header "SSL GATEWAY (DUAL)"
+    echo -e "${YELLOW}[!] Configurando SSL Gateway (KRAKER VPS)...${NC}"
     read -p "Ingresa el SNI Bug de tu compañía: " BUG
     [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
@@ -36,30 +17,30 @@ setup_protocol() {
     openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/ws_ssl/server.key -out /etc/ws_ssl/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
     
     # Liberar puerto 443 e iniciar
-    setup_banner
+    setup_motd
     fuser -k 443/tcp > /dev/null 2>&1
-    screen -dmS "kraker_ssl" python3 KRAKER_SSL_Gateway.py "443" "/etc/ws_ssl/server.crt" "/etc/ws_ssl/server.key"
+    screen -dmS "kraker_ssl" python3 "$SOURCE_DIR/KRAKER_SSL_Gateway.py" "443" "/etc/ws_ssl/server.crt" "/etc/ws_ssl/server.key"
     
-    echo -e "${VERDE}[*] KRAKER VPS - Gateway Dual Iniciado en Puerto 443${RESET}"
-    echo -e "${AMARILLO}[*] Redirección interna: Puerto 80 (SSH/Dropbear)${RESET}"
+    echo -e "${GREEN}[*] KRAKER VPS - Gateway Dual Iniciado en Puerto 443${NC}"
+    echo -e "${YELLOW}[*] Redirección interna: Puerto 80 (SSH/Dropbear)${NC}"
     sleep 3
 }
 
 stop_protocol() {
-    msg_header
+    msg_header "SSL GATEWAY STOP"
     screen -X -S "kraker_ssl" quit > /dev/null 2>&1
     fuser -k 443/tcp > /dev/null 2>&1
-    echo -e "${VERDE}[*] Servicio KRAKER SSL detenido.${RESET}"
+    echo -e "${GREEN}[*] Servicio KRAKER SSL detenido.${NC}"
     sleep 2
 }
 
 menu() {
-    msg_header
-    echo -e "${VERDE}[1] > ${AMARILLO}INICIAR GATEWAY DUAL (WS+Direct)${RESET}"
-    echo -e "${VERDE}[2] > ${AMARILLO}DETENER GATEWAY${RESET}"
-    echo -e "${VERDE}[3] > ${AMARILLO}MONITOR DE LOGS${RESET}"
+    msg_header "SSL GATEWAY MENU"
+    echo -e "${GREEN}[1] > ${YELLOW}INICIAR GATEWAY DUAL (WS+Direct)${NC}"
+    echo -e "${GREEN}[2] > ${YELLOW}DETENER GATEWAY${NC}"
+    echo -e "${GREEN}[3] > ${YELLOW}MONITOR DE LOGS${NC}"
     echo -e "${BARRA}"
-    echo -e "${VERDE}[0] > ${ROJO}SALIR${RESET}"
+    echo -e "${GREEN}[0] > ${RED}SALIR${NC}"
     read -p "Alternativa: " OPC
     case $OPC in
         1) setup_protocol ; menu ;;
@@ -70,5 +51,6 @@ menu() {
     esac
 }
 
-apt update -y && apt install -y screen openssl net-tools > /dev/null 2>&1
+# Install Deps
+install_deps screen openssl net-tools python3
 menu

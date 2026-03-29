@@ -1,31 +1,15 @@
 #!/bin/bash
-# KRAKER VPS - TROJAN WS + TLS
+# KRAKER MASTER - TROJAN WS + TLS
 # Versión Auditada y Estandarizada
 
-AZUL="\033[1;34m" && VERDE="\033[1;32m" && ROJO="\033[1;31m" && AMARILLO="\033[1;33m" && RESET="\033[0m"
-BARRA="${ROJO}======================================================${RESET}"
-
-msg_header() {
-    clear
-    echo -e "${BARRA}"
-    echo -e "${AZUL}    🐲 KRAKER VPS - TROJAN WS + TLS (ELITE) 🐲${RESET}"
-    echo -e "${BARRA}"
-}
-
-setup_banner() {
-    cat << 'EOF' > /etc/motd
-  ██╗  ██╗██████╗  █████╗ ██╗  ██╗███████╗██████╗     ██╗   ██╗██████╗ ███████╗
-  ██║ ██╔╝██╔══██╗██╔══██╗██║ ██╔╝██╔════╝██╔══██╗    ██║   ██║██╔══██╗██╔════╝
-  █████╔╝ ██████╔╝███████║█████╔╝ █████╗  ██████╔╝    ██║   ██║██████╔╝███████╗
-  ██╔═██╗ ██╔══██╗██╔══██║██╔═██╗ ██╔══╝  ██╔══██╗    ╚██╗ ██╔╝██╔═══╝ ╚════██║
-  ██║  ██╗██║  ██║██║  ██║██║  ██╗███████╗██║  ██║     ╚████╔╝ ██║     ████████║
-  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝      ╚═══╝  ╚═╝     ╚══════╝
-                               BIENVENIDO A KRAKER VPS
-EOF
-}
+# Cargar Librerías
+SOURCE_DIR=$(dirname "$(readlink -f "$0")")
+[[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 # 1. Configuración Interactiva
-msg_header
+msg_header "TROJAN WS + TLS SETUP"
+install_deps curl jq openssl coreutils ufw lsof
+
 read -p "Introduce tu SNI Bug (ej: cdn-global.configcat.com): " BUG
 [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
@@ -33,13 +17,15 @@ read -p "Puerto para Trojan [2053]: " PORT
 [[ -z $PORT ]] && PORT=2053
 
 PASS=$(openssl rand -hex 8)
-IP=$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')
+IP=$(get_ip)
 
 # 2. Certificados y Directorios
+echo -e "${YELLOW}[*] Generando certificados...${NC}"
 mkdir -p /etc/kraker_trojan
 openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_trojan/server.key -out /etc/kraker_trojan/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
 
 # 3. Integración con Xray (JQ)
+echo -e "${YELLOW}[*] Configurando Xray-core...${NC}"
 cat << EOM > /usr/local/etc/xray/temp_trojan.json
 {
     "port": $PORT, "protocol": "trojan",
@@ -60,13 +46,13 @@ else
 fi
 
 # 4. Finalización
-setup_banner
+setup_motd
 ufw allow $PORT/tcp > /dev/null 2>&1
-systemctl restart xray
+systemctl restart xray > /dev/null 2>&1
 rm /usr/local/etc/xray/temp_trojan.json
 
 LINK="trojan://$PASS@$IP:$PORT?security=tls&sni=$BUG&fp=chrome&type=ws&path=/krakervps#KRAKER_VPS_TROJAN"
-msg_header
-echo -e "${VERDE}✔ KRAKER TROJAN INSTALADO CON ÉXITO!${RESET}"
-echo -e "${YELLOW}Enlace:${RESET} $LINK"
+msg_header "TROJAN INSTALACIÓN COMPLETADA"
+echo -e "${GREEN}✔ KRAKER TROJAN INSTALADO CON ÉXITO!${NC}"
+echo -e "${YELLOW}Enlace:${NC} $LINK"
 echo -e "${BARRA}"
