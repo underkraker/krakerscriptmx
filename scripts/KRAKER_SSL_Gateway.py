@@ -43,17 +43,19 @@ def handler(client_socket, address, target_addr, target_port):
         except BlockingIOError:
             data = b""
 
-        client_socket.setblocking(True)
-
         # Conectar al Backend (SSH/Dropbear)
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        remote_socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         remote_socket.settimeout(3.0)
         try:
             remote_socket.connect((target_addr, int(target_port)))
+            remote_socket.settimeout(None) # Eliminar timeout para la transferencia
         except Exception as e:
             # Si el backend falla, cerramos la conexión del cliente
             client_socket.close()
             return
+
+        client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         # Si teníamos datos iniciales (no WS), los enviamos
         if data and not is_websocket:
