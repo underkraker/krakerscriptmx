@@ -38,14 +38,15 @@ chmod +x "$REPO_DIR/menu.sh"
 chmod +x "$REPO_DIR/scripts"/*.sh
 chmod +x "$REPO_DIR/scripts/KRAKER_User.sh"
 
-# Create Shortcut
-echo -e "${YELLOW}[*] Creando acceso directo 'kraker'...${NC}"
+# Create Shortcuts
+echo -e "${YELLOW}[*] Creando accesos directos 'kraker' y 'menu'...${NC}"
 ln -sf "$REPO_DIR/menu.sh" /usr/bin/kraker
-chmod +x /usr/bin/kraker
+ln -sf "$REPO_DIR/menu.sh" /usr/bin/menu
+chmod +x /usr/bin/kraker /usr/bin/menu
 
 echo -e "${CYAN}======================================================${NC}"
 echo -e "${GREEN}✔ INSTALACIÓN COMPLETADA CON ÉXITO!${NC}"
-echo -e "${YELLOW}Escribe 'kraker' para abrir el panel en cualquier momento.${NC}"
+echo -e "${YELLOW}Escribe 'kraker' o 'menu' para abrir el panel.${NC}"
 echo -e "${CYAN}======================================================${NC}"
 
 sleep 2
