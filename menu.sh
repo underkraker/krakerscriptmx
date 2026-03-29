@@ -21,30 +21,36 @@ fi
 # FunciÃ³n para mostrar el encabezado VIP (DinÃ¡mico Gamer Master)
 function header() {
     clear
-    local P_NAME="GAMER MASTER"
-    [ -f /etc/gaming_vps/panel_name.txt ] && P_NAME=$(cat /etc/gaming_vps/panel_name.txt | tr '[:lower:]' '[:upper:]')
+    export LC_ALL=C.UTF-8
+    local P_NAME="KRAKER MASTER"
+    [ -f /etc/gaming_vps/panel_name.txt ] && P_NAME=$(cat /etc/gaming_vps/panel_name.txt | tr "[:lower:]" "[:upper:]")
     
-    echo -e "\n"
-    echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
-    # Banner Estilizado DinÃ¡mico
-    local len=${#P_NAME}
-    local spaces=$(( (50 - len) / 2 ))
-    local padding=""
-    for ((i=0; i<spaces; i++)); do padding+=" "; done
+    # Obtener IP Pública (Cache por sesión)
+    if [ -z "$MY_IP" ]; then MY_IP=$(curl -s4 icanhazip.com || hostname -I | awk "{print $1}"); fi
     
-    echo -e "   ${MAGENTA}${BOLD}${padding}âš¡ $P_NAME âš¡${NC}"
-    echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
+    # Obtener RAM y CPU
+    ram_total=$(free -m | awk "/Mem:/ {print $2}")
+    ram_used=$(free -m | awk "/Mem:/ {print $3}")
+    ram_perc=$((ram_used * 100 / ram_total))
+    cpu_load=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk "{print 100 - $1}")
+    cpu_perc=${cpu_load%.*}
     
-    if [ -f /etc/gaming_vps/slogan.txt ]; then
-        M_SLOGAN=$(cat /etc/gaming_vps/slogan.txt)
-        echo -e "         ${WHITE}${BOLD}ðŸ”¥  $M_SLOGAN  ðŸ”¥${NC}"
-    else
-        echo -e "         ${WHITE}${BOLD}ðŸ”¥  V P S   P A N E L   P R O  ðŸ”¥${NC}"
-    fi
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${MAGENTA}${BOLD}                ⚡ $P_NAME ⚡${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   ${WHITE}🌍 IP: ${NC}${CYAN}$MY_IP${NC}"
+    echo -e "   ${WHITE}💾 Mem. RAM  : $(draw_bar $ram_perc)  ${ram_perc}% ${ram_used}MB / ${ram_total}MB${NC}"
+    echo -e "   ${WHITE}🧠 Uso CPU   : $(draw_bar $cpu_perc)  ${cpu_perc}%${NC}"
     
-    echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
-    echo -e "     ${GREEN}âš¡ Ping Optimizer    ðŸ›¡ï¸ Anti-DDoS    ðŸ¦‡ Multi-Tunnel${NC}"
-    echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}\n"
+    # Detector de Puertos Activos
+    echo -ne "   ${WHITE}🔒 Puertos Activos: ${YELLOW}"
+    for p in 22 80 443 7300 8080 3128 8081 444 53; do
+        if ss -tuln | grep -q ":$p "; then
+            case $p in 22) echo -n "22(SSH) ";; 80) echo -n "80(Drop) ";; 443) echo -n "443(SSL) ";; 7300) echo -n "7300(UDP) ";; 8081) echo -n "8081(WS) ";; 53) echo -n "53(DNS) ";; esac
+        fi
+    done
+    echo -e "${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
 # ============== PARTE 2: OPTIMIZACIÃ“N GAMING ==============
@@ -1177,134 +1183,32 @@ VPS_IP=""
 
 # FunciÃ³n para mostrar el panel principal
 function main_menu() {
-    if [ -z "$VPS_IP" ]; then
-        VPS_IP=$(curl -s4 --max-time 3 ifconfig.me || curl -s4 --max-time 3 icanhazip.com || echo "Desconocida")
-    fi
-
     while true; do
-        # Obtener recursos en tiempo real rÃ¡pido (sin delays)
-        RAM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
-        RAM_USED=$(free -m | awk '/Mem:/ {print $3}')
-        RAM_PCT=$((RAM_USED * 100 / RAM_TOTAL))
-        CPU_LOAD=$(LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
-        CPU_LOAD=${CPU_LOAD%.*} # Quitar decimales
-        [ -z "$CPU_LOAD" ] || [ "$CPU_LOAD" -lt 0 ] && CPU_LOAD="0"
-
-        # Listar puertos abiertos dinÃ¡micos (Sin Basura)
-        ACTIVOS=$(netstat -tulnp | grep LISTEN | awk '{print $4}' | cut -d: -f2 | sort -u)
-        PUERTOS_LIST=()
-        
-        for p in $ACTIVOS; do
-            # Mapeo Inteligente de Servicios
-            case $p in
-                22) PUERTOS_LIST+=("22(SSH)") ;;
-                80|143|109) 
-                    if pgrep -f "dropbear.*-p $p" >/dev/null; then PUERTOS_LIST+=("${p}(Drop)"); fi ;;
-                443|444|445) 
-                    if pgrep -f "stunnel4" >/dev/null; then PUERTOS_LIST+=("${p}(SSL)"); 
-                    elif pgrep -f "xray" >/dev/null; then PUERTOS_LIST+=("${p}(Xray)"); 
-                    elif pgrep -f "hysteria" >/dev/null; then PUERTOS_LIST+=("${p}(HY2)"); fi ;;
-                8080|3128) 
-                    if pgrep -f "squid" >/dev/null; then PUERTOS_LIST+=("${p}(Sqd)"); fi ;;
-                7300|7400|7500) 
-                    if pgrep -f "badvpn" >/dev/null; then PUERTOS_LIST+=("${p}(UDP)"); fi ;;
-                1194) 
-                    if pgrep -f "openvpn" >/dev/null; then PUERTOS_LIST+=("${p}(OVPN)"); fi ;;
-                51820)
-                    if [ -d /sys/class/net/wg0 ]; then PUERTOS_LIST+=("${p}(WG)"); fi ;;
-                53)
-                    if systemctl is-active --quiet slowdns || pgrep -f "dnstt-server" >/dev/null; then PUERTOS_LIST+=("${p}(DNS)"); fi ;;
-                8388)
-                    if systemctl is-active --quiet shadowsocks-libev; then PUERTOS_LIST+=("${p}(SS)"); fi ;;
-                *)
-                    # Si no es un puerto estÃ¡tico, checamos quÃ© binario escucha
-                    if pgrep -f "ws.py" >/dev/null && netstat -tulnp | grep ":$p " | grep -q "python"; then
-                        PUERTOS_LIST+=("${p}(WS)")
-                    elif pgrep -f "xray" >/dev/null && netstat -tulnp | grep ":$p " | grep -q "xray"; then
-                        PUERTOS_LIST+=("${p}(Xray)")
-                    elif pgrep -f "hysteria" >/dev/null && netstat -tulnp | grep ":$p " | grep -qE "hysteria|hy"; then
-                        PUERTOS_LIST+=("${p}(HY2)")
-                    fi
-                    ;;
-            esac
-        done
-
         header
-        echo -e "   ${CYAN}ðŸŒ IP Server :${NC} ${WHITE}${BOLD}${VPS_IP}${NC}"
-        echo -ne "   ${CYAN}ðŸ’¾ Mem. RAM  :${NC} " ; draw_bar $RAM_PCT ; echo -e " ${WHITE}${RAM_USED}MB / ${RAM_TOTAL}MB${NC}"
-        echo -ne "   ${CYAN}ðŸ§  Uso CPU   :${NC} " ; draw_bar $CPU_LOAD ; echo -e ""
+        echo -e "   ${MAGENTA}${BOLD}          🏆 M E N Ú   P R I N C I P A L 🏆${NC}\n"
+        echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}👤 Gestor de Usuarios VIP${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}🚀 Acelerador y Optimización de Red${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}⚙️  Instalador de Protocolos y Túneles${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}📊 Monitor de Recursos (RAM/CPU/Ping)${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}🛡️  Módulo de Seguridad y Anti-Abusos${NC}"
+        echo -e "      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}🛠️  Herramientas de Sistema (DNS/Swap)${NC}\n"
+        echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "    ${CYAN}[${YELLOW} 98${CYAN}]${NC} ${WHITE}🔄 Actualizar Script   ${CYAN}[${YELLOW} 99${CYAN}]${NC} ${WHITE}🗑️ Desinstalar Script${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         
-        # Mostrar puertos de forma estÃ©tica en filas de 3
-        echo -e "   ${CYAN}ðŸ”“ Puertos Activos:${NC}"
-        if [ ${#PUERTOS_LIST[@]} -eq 0 ]; then
-            echo -e "      ${YELLOW}Ninguno${NC}"
-        else
-            COUNT=0
-            ROW="      "
-            for item in "${PUERTOS_LIST[@]}"; do
-                # Formatear cada item con un ancho fijo aproximado de 15 caracteres
-                F_ITEM=$(printf "%-15s" "$item")
-                ROW+="${YELLOW}${F_ITEM}${NC}"
-                ((COUNT++))
-                if [ $COUNT -eq 3 ]; then
-                    echo -e "$ROW"
-                    ROW="      "
-                    COUNT=0
-                fi
-            done
-            [ $COUNT -gt 0 ] && echo -e "$ROW"
-        fi
-        echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
-        echo -e "   ${MAGENTA}â–${NC} ${WHITE}${BOLD}M E N Ãš   P R I N C I P A L${NC} ${MAGENTA}â–${NC}\n"
-        echo -e "      ${CYAN}[${YELLOW} 1 ${CYAN}]${NC} ${BOLD}ðŸ‘¤ Gestor de Usuarios VIP${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 2 ${CYAN}]${NC} ${BOLD}ðŸš€ Acelerador y OptimizaciÃ³n de Red${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 3 ${CYAN}]${NC} ${BOLD}âš™ï¸  Instalador de Protocolos y TÃºneles${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 4 ${CYAN}]${NC} ${BOLD}ðŸ“Š Monitor de Recursos (RAM/CPU/Ping)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 5 ${CYAN}]${NC} ${BOLD}ðŸ›¡ï¸  MÃ³dulo de Seguridad y Anti-Abusos${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 6 ${CYAN}]${NC} ${BOLD}ðŸ› ï¸  Herramientas de Sistema (DNS/Swap)${NC}"
-        echo -e "      ${CYAN}[${YELLOW} 0 ${CYAN}]${NC} ${RED}${BOLD}âŒ Cerrar SesiÃ³n${NC}\n"
-        echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
-        echo -e "    ${CYAN}[${YELLOW}98${CYAN}]${NC} ${WHITE}ðŸ”„ Actualizar Script${NC}   ${CYAN}[${YELLOW}99${CYAN}]${NC} ${WHITE}ðŸ—‘ï¸ Desinstalar Script${NC}"
-        echo -e "   ${CYAN}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
-    
-        echo -e -n "   ${WHITE}${BOLD}ðŸŽ® Selecciona una opciÃ³n del panel (Autorefresco 5s):${NC} "
-        read -t 5 option
+        read -t 5 -p "   🎮 Selecciona una opción (Autorefresco 5s): " opt
+        [ -z "$opt" ] && continue
 
-        case $option in
-            1)
-                users_menu
-                ;;
-            2)
-                optimizer_menu
-                ;;
-            3)
-                services_menu
-                ;;
-            4)
-                monitor_menu
-                ;;
-            5)
-                security_menu
-                ;;
-            6)
-                tools_menu
-                ;;
-            98)
-                update_script
-                ;;
-            99)
-                uninstall_script
-                ;;
-            0)
-                clear
-                echo -e "${MAGENTA}>>> Saliendo... Â¡GG!${NC}"
-                exit 0
-                ;;
-            *)
-                echo -e "${RED}âŒ OpciÃ³n no vÃ¡lida. Intenta de nuevo.${NC}"
-                sleep 2
-                continue
-                ;;
+        case $opt in
+            1) users_menu ;;
+            2) optimizer_menu ;;
+            3) services_menu ;;
+            4) monitor_menu ;;
+            5) security_menu ;;
+            6) tools_menu ;;
+            98) update_script ;;
+            99) uninstall_script ;;
+            *) echo -e "${RED}[x] Opción inválida."; sleep 1 ;;
         esac
     done
 }
