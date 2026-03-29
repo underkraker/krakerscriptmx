@@ -36,6 +36,7 @@ git clone https://github.com/underkraker/krakerscriptmx.git "$REPO_DIR" > /dev/n
 echo -e "${YELLOW}[*] Configurando permisos...${NC}"
 chmod +x "$REPO_DIR/menu.sh"
 chmod +x "$REPO_DIR/scripts"/*.sh
+chmod +x "$REPO_DIR/scripts/KRAKER_User.sh"
 
 # Create Shortcut
 echo -e "${YELLOW}[*] Creando acceso directo 'kraker'...${NC}"
