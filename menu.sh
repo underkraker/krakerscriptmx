@@ -16,10 +16,12 @@ sys_stats() {
     RAM_TOTAL=$(free -m | awk '/Mem:/ { print $2 }')
     CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')"%"
     UPTIME=$(uptime -p)
+    ACTIVE_PORTS=$(get_active_ports)
 
     echo -e "  ${WHITE}DIRECCIÓN IP   : ${GREEN}$IP_EXT${NC}          ${WHITE}UPTIME : ${GREEN}$UPTIME${NC}"
     echo -e "  ${WHITE}SISTEMA OP.    : ${GREEN}$OS${NC}"
     echo -e "  ${WHITE}USO DE MEMORIA : ${GREEN}$RAM_USED MB / $RAM_TOTAL MB${NC}          ${WHITE}CPU : ${GREEN}$CPU_USAGE${NC}"
+    echo -e "  ${WHITE}PUERTOS ACTIVOS: ${CYAN}${ACTIVE_PORTS:-NINGUNO}${NC}"
     echo -e "${BARRA}"
 }
 
