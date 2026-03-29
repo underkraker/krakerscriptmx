@@ -17,16 +17,31 @@ setup_protocol() {
     systemctl stop apache2 nginx > /dev/null 2>&1
     fuser -k 80/tcp 443/tcp > /dev/null 2>&1
     
-    # 2. Detectar puerto de destino (Prioridad 80, secundaria 143)
-    local TARGET_PORT=80
-    if ! ss -lnpt | grep -q ":80 "; then
-        if ss -lnpt | grep -q ":143 "; then
-            TARGET_PORT=143
-            echo -e "${YELLOW}[!] Port 80 down. Redirigiendo a Dropbear (143).${NC}"
-        else
-            echo -e "${RED}[!] Error: No se detectó Dropbear/SSH en puerto 80 ni 143.${NC}"
-            sleep 3 && return
+    # 2. Detectar puerto de destino (Proactivo)
+    local TARGET_PORT=0
+    
+    # Intentar detectar Dropbear/SSH (80, 143, 22)
+    for p in 80 143 22; do
+        if ss -lnpt | grep -q ":$p "; then
+            TARGET_PORT=$p
+            break
         fi
+    done
+
+    # Si no detectamos nada, intentamos iniciar Dropbear automáticamente
+    if [[ $TARGET_PORT -eq 0 ]]; then
+        echo -e "${YELLOW}[!] Iniciando Dropbear de respaldo...${NC}"
+        systemctl start dropbear > /dev/null 2>&1
+        sleep 1
+        if ss -lnpt | grep -q ":80 "; then TARGET_PORT=80
+        elif ss -lnpt | grep -q ":143 "; then TARGET_PORT=143
+        elif ss -lnpt | grep -q ":22 "; then TARGET_PORT=22
+        fi
+    fi
+
+    if [[ $TARGET_PORT -eq 0 ]]; then
+        echo -e "${RED}[!] Error Fatal: No se detectó ningún servicio (SSH/Dropbear) para el túnel.${NC}"
+        sleep 3 && return
     fi
 
     # 3. Generar Certificado
