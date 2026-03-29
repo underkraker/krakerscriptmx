@@ -12,10 +12,10 @@ setup_protocol() {
     read -p "Ingresa el SNI Bug de tu compañía: " BUG
     [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
-    # 1. Liberar puerto 80 y 443
-    echo -e "${YELLOW}[*] Liberando puertos y deteniendo conflictos...${NC}"
+    # 1. Liberar puerto 443 (donde escucha el Gateway)
+    echo -e "${YELLOW}[*] Liberando puerto 443 y deteniendo conflictos...${NC}"
     systemctl stop apache2 nginx > /dev/null 2>&1
-    fuser -k 80/tcp 443/tcp > /dev/null 2>&1
+    fuser -k 443/tcp > /dev/null 2>&1
     
     # 2. Detectar puerto de destino (Proactivo)
     local TARGET_PORT=0
