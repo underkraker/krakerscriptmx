@@ -7,20 +7,7 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 setup_protocol() {
-    msg_header "SSL GATEWAY (DUAL)"
-    echo -e "${YELLOW}[!] Selecciona el tipo de Certificado SSL:${NC}"
-    echo -e "  ${GREEN}[1]${NC} ${WHITE}Universal SNI (google.com - Alta Compatibilidad)${NC}"
-    echo -e "  ${GREEN}[2]${NC} ${WHITE}Custom SNI (Ingresar manualmente)${NC}"
-    echo -e "${BARRA}"
-    read -p "Opción [1]: " SNI_OPT
-    
-    if [[ $SNI_OPT == "2" ]]; then
-        read -p "Ingresa el SNI Bug de tu compañía: " BUG
-        [[ -z $BUG ]] && BUG="www.google.com"
-    else
-        BUG="www.google.com"
-        echo -e "${GREEN}[*] Usando Universal SNI: $BUG${NC}"
-    fi
+    BUG=$(get_sni_choice)
 
     # 1. Liberar puerto 443 (donde escucha el Gateway)
     echo -e "${YELLOW}[*] Liberando puerto 443 y deteniendo conflictos...${NC}"

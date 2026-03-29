@@ -10,8 +10,7 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 msg_header "VMESS WS + TLS SETUP"
 install_deps curl jq openssl coreutils ufw lsof
 
-read -p "Introduce tu SNI Bug (ej: cdn-global.configcat.com): " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+BUG=$(get_sni_choice)
 
 read -p "Puerto para VMess [2083]: " PORT
 [[ -z $PORT ]] && PORT=2083

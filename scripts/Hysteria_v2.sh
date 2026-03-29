@@ -15,9 +15,7 @@ echo -e "${YELLOW}[*] Instalando Hysteria v2 core...${NC}"
 bash <(curl -fsSL https://get.hy2.biz) > /dev/null 2>&1
 
 # 3. Config & Certs
-echo -e "${CYAN}Ingresa el SNI Bug para Hysteria (ej: cdn-global.configcat.com)${NC}"
-read -p "SNI Bug: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+BUG=$(get_sni_choice)
 
 # Generar Certificado
 mkdir -p /etc/hysteria

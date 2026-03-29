@@ -26,9 +26,7 @@ SHORT_ID=$(head /dev/urandom | tr -dc 'a-f0-9' | head -c 8)
 IP_PUB=$(get_ip)
 
 # 4. Interactivity (SNI Bug)
-echo -e "${CYAN}Ingresa el SNI Bug para REALITY (ej: cdn-global.configcat.com)${NC}"
-read -p "SNI Bug: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+BUG=$(get_sni_choice)
 
 # Port Selection (Priority 443)
 PORT=443
