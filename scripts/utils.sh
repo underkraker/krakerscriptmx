@@ -80,3 +80,20 @@ EOF
     sed -i 's/#PrintMotd yes/PrintMotd yes/g' /etc/ssh/sshd_config
     systemctl restart sshd > /dev/null 2>&1
 }
+
+get_active_ports() {
+    local ports=""
+    # Check common ports with lsof
+    [[ $(lsof -Pi :80 -sTCP:LISTEN -t) ]] && ports+="80 "
+    [[ $(lsof -Pi :443 -sTCP:LISTEN -t) ]] && ports+="443 "
+    [[ $(lsof -Pi :143 -sTCP:LISTEN -t) ]] && ports+="143 "
+    [[ $(lsof -Pi :442 -sTCP:LISTEN -t) ]] && ports+="442 "
+    [[ $(lsof -Pi :2083 -sTCP:LISTEN -t) ]] && ports+="2083 "
+    [[ $(lsof -Pi :2087 -sTCP:LISTEN -t) ]] && ports+="2087 "
+    [[ $(lsof -Pi :2053 -sTCP:LISTEN -t) ]] && ports+="2053 "
+    # Check UDP ports (BadVPN)
+    [[ $(lsof -Pi :7100 -sUDP:LISTEN -t) ]] && ports+="7100 "
+    [[ $(lsof -Pi :7200 -sUDP:LISTEN -t) ]] && ports+="7200 "
+    [[ $(lsof -Pi :7300 -sUDP:LISTEN -t) ]] && ports+="7300 "
+    echo "$ports"
+}
