@@ -230,11 +230,25 @@ EOF
 
 function liberar_puerto() {
     local PORT=$1
-    if ss -tuln 2>/dev/null | grep -q ":$PORT "; then
-        PIDS=$(lsof -t -i:$PORT 2>/dev/null)
-        if [ -n "$PIDS" ]; then
-            systemctl stop stunnel4 ws-python apache2 nginx squid 2>/dev/null
-            kill -9 $PIDS 2>/dev/null
+    local PROTO=$2 # TCP o UDP (opcional)
+    
+    if [ -z "$PROTO" ]; then
+        # Modo agresivo: Limpiar todo si hay algo (Old behavior)
+        if ss -tuln 2>/dev/null | grep -q ":$PORT "; then
+            PIDS=$(lsof -t -i:$PORT 2>/dev/null)
+            if [ -n "$PIDS" ]; then
+                systemctl stop stunnel4 ws-python apache2 nginx squid hysteria xray 2>/dev/null
+                kill -9 $PIDS 2>/dev/null
+            fi
+        fi
+    else
+        # Modo quirúrgico: Solo si el protocolo específico choca
+        # ss -tuln ya tiene info de tcp/udp
+        if ss -a -n -p "$PROTO" 2>/dev/null | grep -q ":$PORT "; then
+            PIDS=$(lsof -t -i$PROTO:$PORT 2>/dev/null)
+            if [ -n "$PIDS" ]; then
+                kill -9 $PIDS 2>/dev/null
+            fi
         fi
     fi
 }
@@ -845,7 +859,7 @@ function install_hysteria2() {
     read -r hy_auth
     [ -z "$hy_auth" ] && hy_auth="krakerHY2"
     
-    liberar_puerto $hy_port
+    liberar_puerto "$hy_port" "$([[ "$hy_port" =~ ^[0-9]+$ ]] && echo "udp")"
     
     cat > /etc/hysteria/config.yaml <<EOF
 listen: :$hy_port
@@ -855,6 +869,12 @@ tls:
 auth:
   type: password
   password: $hy_auth
+masquerade:
+  type: proxy
+  proxy:
+    url: https://www.google.com
+    rewriteHost: true
+ignoreClientBandwidth: true
 udp_idle_timeout: 60s
 EOF
     
@@ -1427,11 +1447,13 @@ function main_menu() {
                 8388)
                     if systemctl is-active --quiet shadowsocks-libev; then PUERTOS_LIST+=("${p}(SS)"); fi ;;
                 *)
-                    # Si no es un puerto estatico, checamos si es WS Python o Xray Custom
+                    # Si no es un puerto estático, checamos qué binario escucha
                     if pgrep -f "ws.py" >/dev/null && netstat -tulnp | grep ":$p " | grep -q "python"; then
                         PUERTOS_LIST+=("${p}(WS)")
                     elif pgrep -f "xray" >/dev/null && netstat -tulnp | grep ":$p " | grep -q "xray"; then
                         PUERTOS_LIST+=("${p}(Xray)")
+                    elif pgrep -f "hysteria" >/dev/null && netstat -tulnp | grep ":$p " | grep -qE "hysteria|hy"; then
+                        PUERTOS_LIST+=("${p}(HY2)")
                     fi
                     ;;
             esac
