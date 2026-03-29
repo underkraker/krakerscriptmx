@@ -79,13 +79,27 @@ backup_system() {
     sleep 3
 }
 
+install_watchdog() {
+    msg_header "ACTIVAR GUARDIÁN DE SERVICIOS"
+    chmod +x "$SOURCE_DIR/KRAKER_Watchdog.sh"
+    if crontab -l 2>/dev/null | grep -q "KRAKER_Watchdog.sh"; then
+        echo -e "${GREEN}[✔] El Guardián ya está activo (Revisión cada 1 min).${NC}"
+    else
+        (crontab -l 2>/dev/null; echo "* * * * * $SOURCE_DIR/KRAKER_Watchdog.sh > /dev/null 2>&1") | crontab -
+        echo -e "${GREEN}[✔] Guardián activado: Tus servicios están protegidos 24/7.${NC}"
+    fi
+    sleep 2
+}
+
 # --- MENU DE SISTEMA ---
 menu() {
     msg_header "SISTEMA Y OPTIMIZACIÓN"
-    echo -e "  ${YELLOW}[1]${NC} ${WHITE}ACTIVAR TCP BBR (OPTIMIZACIÓN DE RED)${NC}"
+    echo -e "  ${YELLOW}[1]${NC} ${WHITE}ACTIVAR TCP BBR (OPTIMIZACIÓN RED)${NC}"
     echo -e "  ${YELLOW}[2]${NC} ${WHITE}EJECUTAR LIMPIADOR DE EXPIRADOS${NC}"
     echo -e "  ${YELLOW}[3]${NC} ${WHITE}ACTIVAR LIMPIEZA DIARIA (AUTO-CRON)${NC}"
     echo -e "  ${YELLOW}[4]${NC} ${WHITE}CREAR COPIA DE SEGURIDAD (BACKUP)${NC}"
+    echo -e "  ${YELLOW}[5]${NC} ${WHITE}CONFIGURAR DOMINIO REAL (SSL ACME)${NC}"
+    echo -e "  ${YELLOW}[6]${NC} ${WHITE}ACTIVAR GUARDIÁN (WATCHDOG)${NC}"
     echo -e "${BARRA}"
     echo -e "  ${YELLOW}[0]${NC} ${RED}VOLVER AL MENU PRINCIPAL${NC}"
     echo -e "${BARRA}"
@@ -95,6 +109,8 @@ menu() {
         2) auto_clean_users ; menu ;;
         3) manage_cron ; menu ;;
         4) backup_system ; menu ;;
+        5) bash "$SOURCE_DIR/KRAKER_Acme.sh" ; menu ;;
+        6) install_watchdog ; menu ;;
         0) exit 0 ;;
         *) menu ;;
     esac
