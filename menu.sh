@@ -12,15 +12,22 @@ SOURCE_DIR=$(dirname "$SOURCE_PATH")
 sys_stats() {
     IP_EXT=$(get_ip)
     OS=$(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2 || echo "Linux VPS")
-    RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
+    
+    # Cálculos de Recursos
     RAM_TOTAL=$(free -m | awk '/Mem:/ { print $2 }')
-    CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')"%"
+    RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
+    RAM_PERC=$(( RAM_USED * 100 / RAM_TOTAL ))
+    
+    CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}' | cut -d. -f1)
+    [[ -z $CPU_USAGE ]] && CPU_USAGE=0
+
     UPTIME=$(uptime -p)
     ACTIVE_PORTS=$(get_active_ports)
 
-    echo -e "  ${WHITE}DIRECCIÓN IP   : ${GREEN}$IP_EXT${NC}          ${WHITE}UPTIME : ${GREEN}$UPTIME${NC}"
-    echo -e "  ${WHITE}SISTEMA OP.    : ${GREEN}$OS${NC}"
-    echo -e "  ${WHITE}USO DE MEMORIA : ${GREEN}$RAM_USED MB / $RAM_TOTAL MB${NC}          ${WHITE}CPU : ${GREEN}$CPU_USAGE${NC}"
+    echo -e "  ${WHITE}IP PÚBLICA    : ${GREEN}$IP_EXT${NC}          ${WHITE}SISTEMA : ${GREEN}$OS${NC}"
+    echo -e "  ${WHITE}UPTIME        : ${GREEN}$UPTIME${NC}"
+    echo -e "  ${WHITE}MEMORIA RAM   : $(get_resource_bar $RAM_PERC) ${WHITE}($RAM_USED / $RAM_TOTAL MB)${NC}"
+    echo -e "  ${WHITE}CARGA CPU     : $(get_resource_bar $CPU_USAGE)${NC}"
     echo -e "  ${WHITE}PUERTOS ACTIVOS: ${CYAN}${ACTIVE_PORTS:-NINGUNO}${NC}"
     echo -e "${BARRA}"
 }
@@ -35,8 +42,8 @@ main_menu() {
     echo -e "  ${YELLOW}[04]${NC} ${WHITE}SSL GATEWAY (PYTHON)${NC}       ${YELLOW}[09]${NC} ${WHITE}KRAKER DNS SECURITY${NC}"
     echo -e "  ${YELLOW}[05]${NC} ${WHITE}VMESS (XRAY)${NC}               ${YELLOW}[10]${NC} ${WHITE}DROPBEAR MANAGER${NC}"
     echo -e "${BARRA}"
-    echo -e "  ${YELLOW}[11]${NC} ${WHITE}ESTADO DE SERVICIOS${NC}        ${YELLOW}[12]${NC} ${WHITE}TEST DE VELOCIDAD${NC}"
-    echo -e "  ${YELLOW}[13]${NC} ${WHITE}GESTIÓN DE USUARIOS${NC}        ${YELLOW}[00]${NC} ${RED}SALIR DEL MENU${NC}"
+    echo -e "  ${YELLOW}[11]${NC} ${WHITE}MANTENIMIENTO Y SISTEMA${NC}    ${YELLOW}[12]${NC} ${WHITE}GESTIÓN DE USUARIOS${NC}"
+    echo -e "  ${YELLOW}[13]${NC} ${WHITE}TEST DE VELOCIDAD${NC}          ${YELLOW}[00]${NC} ${RED}SALIR DEL MENU${NC}"
     echo -e "${BARRA}"
     echo -en "  ${CYAN}SELECCIONE UNA OPCIÓN: ${NC}"
     read opt
@@ -45,25 +52,22 @@ main_menu() {
         1|01) bash "$SOURCE_DIR/scripts/Xray_Reality.sh" ;;
         2|02) bash "$SOURCE_DIR/scripts/Hysteria_v2.sh" ;;
         3|03) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
-        4|04) python3 "$SOURCE_DIR/scripts/KRAKER_SSL_Gateway.py" ;;
+        4|04) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;; # Reutiliza el instalador de SSL
         5|05) bash "$SOURCE_DIR/scripts/KRAKER_VMess.sh" ;;
         6|06) bash "$SOURCE_DIR/scripts/KRAKER_Trojan.sh" ;;
         7|07) bash "$SOURCE_DIR/scripts/KRAKER_Shadowsocks.sh" ;;
         8|08) bash "$SOURCE_DIR/scripts/KRAKER_UDP.sh" ;;
         9|09) bash "$SOURCE_DIR/scripts/KRAKER_DNS.sh" ;;
         10) bash "$SOURCE_DIR/scripts/KRAKER_Dropbear.sh" ;;
-        11) 
-            msg_header "ESTADO DE SERVICIOS"
-            lsof -i -P -n | grep LISTEN || echo -e "${RED}No hay servicios escuchando.${NC}"
+        11) bash "$SOURCE_DIR/scripts/KRAKER_System.sh" ;;
+        12)
+            install_deps jq
+            bash "$SOURCE_DIR/scripts/KRAKER_User.sh"
             ;;
-        12) 
+        13) 
             echo -e "${YELLOW}Ejecutando Test de Velocidad...${NC}"
             install_deps speedtest-cli
             speedtest-cli
-            ;;
-        13)
-            install_deps jq
-            bash "$SOURCE_DIR/scripts/KRAKER_User.sh"
             ;;
         0|00) 
             clear

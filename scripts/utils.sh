@@ -54,6 +54,23 @@ get_ip() {
     echo "$IP"
 }
 
+get_resource_bar() {
+    local percent=$1
+    local color=$GREEN
+    [[ $percent -gt 50 ]] && color=$YELLOW
+    [[ $percent -gt 80 ]] && color=$RED
+    
+    local width=20
+    local filled=$(( percent * width / 100 ))
+    local empty=$(( width - filled ))
+    
+    local bar=""
+    for ((i=0; i<filled; i++)); do bar+="█"; done
+    for ((i=0; i<empty; i++)); do bar+="░"; done
+    
+    echo -ne "${color}[${bar}] ${percent}%${NC}"
+}
+
 # Dependency Manager
 install_deps() {
     local deps=("$@")
