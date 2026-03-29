@@ -63,6 +63,10 @@ add_user() {
     EXP_DATE=$(date -d "+$DAYS days" +%Y-%m-%d)
     
     echo -e "${YELLOW}[*] Creando cuenta en el sistema...${NC}"
+    
+    # Asegurar que /bin/false sea un shell válido
+    grep -q "^/bin/false" /etc/shells || echo "/bin/false" >> /etc/shells
+    
     useradd -M -s /bin/false -e $EXP_DATE $USERNAME
     echo "$USERNAME:$PASSWORD" | chpasswd
     
