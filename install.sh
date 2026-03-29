@@ -33,11 +33,10 @@ fi
 git clone https://github.com/underkraker/krakerscriptmx.git "$REPO_DIR" > /dev/null 2>&1
 
 # Set Permissions
-echo -e "${YELLOW}[*] Configurando permisos y Banner Global...${NC}"
+echo -e "${YELLOW}[*] Configurando permisos...${NC}"
 chmod +x "$REPO_DIR/menu.sh"
 chmod +x "$REPO_DIR/scripts"/*.sh
-source "$REPO_DIR/scripts/utils.sh"
-setup_motd
+chmod +x "$REPO_DIR/scripts/KRAKER_User.sh"
 
 # Create Shortcuts
 echo -e "${YELLOW}[*] Creando accesos directos 'kraker' y 'menu'...${NC}"
