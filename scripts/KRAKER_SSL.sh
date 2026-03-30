@@ -7,9 +7,13 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
 setup_protocol() {
-    msg_header "SSL GATEWAY (DUAL)"
-    read -p "Ingresa el SNI Bug de tu compañía: " BUG
-    [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+    msg_header "SSL GATEWAY (AUTO-SNI)"
+    
+    # Automatización: Detectamos la IP para el certificado (No más prompts innecesarios)
+    echo -e "${YELLOW}[*] Generando SNI Automático de Seguridad...${NC}"
+    local BUG=$(get_ip)
+    [[ -z $BUG ]] && BUG="google.com"
+    echo -e "${GREEN}[✔] SNI Detectado: $BUG${NC}"
 
     # 1. Liberar puerto 443 (donde escucha el Gateway)
     echo -e "${YELLOW}[*] Liberando puerto 443 y deteniendo conflictos...${NC}"
@@ -88,5 +92,5 @@ menu() {
 }
 
 # Install Deps
-install_deps screen openssl net-tools python3
+install_deps screen openssl net-tools psmisc python3
 menu
