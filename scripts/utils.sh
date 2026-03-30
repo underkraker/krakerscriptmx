@@ -100,13 +100,21 @@ EOF
 
 get_active_ports() {
     local ports=""
-    # Check TCP ports
+    local gaming=""
+    
+    # Check Standard TCP ports
     for p in 80 443 143 442 2083 2087 2053; do
         ss -ntlp | grep -q ":$p " && ports+="$p "
     done
-    # Check UDP ports (BadVPN/Gaming)
+    
+    # Check Gaming/BadVPN TCP Gateway ports
     for p in 7100 7200 7300; do
-        ss -nulp | grep -q ":$p " && ports+="$p "
+        ss -ntlp | grep -q ":$p " && gaming+="$p "
     done
-    echo "$ports"
+    
+    if [[ ! -z $gaming ]]; then
+        echo -e "${ports}${MAGENTA}[UDP:$gaming]${NC}"
+    else
+        echo -e "$ports"
+    fi
 }
