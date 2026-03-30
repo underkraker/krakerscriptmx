@@ -45,7 +45,8 @@ verify_license() {
     if [[ "$STATUS" == "success" ]]; then
         OWNER=$(echo "$RESPONSE" | jq -r '.owner')
         echo -e "  ${GREEN}✅ ACCESO CONCEDIDO: Bienvenido Maestro @$OWNER${NC}"
-        echo "$USER_KEY" > /etc/kraker/.license 2>/dev/null || { mkdir -p /etc/kraker; echo "$USER_KEY" > /etc/kraker/.license; }
+        mkdir -p /etc/kraker
+        echo "$USER_KEY" > /etc/kraker/.license
         sleep 2
         return 0
     else

@@ -69,7 +69,7 @@ mv menu_bin menu.sh
 rm -f menu.sh.x.c
 
 for script in scripts/*.sh; do
-    if [[ -f "$script" ]]; then
+    if [[ -f "$script" && "$script" != "scripts/utils.sh" ]]; then
         shc -v -r -f "$script" -o "${script}_bin" > /dev/null 2>&1
         mv "${script}_bin" "$script"
         rm -f "${script}.x.c"
