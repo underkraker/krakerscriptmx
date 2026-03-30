@@ -39,6 +39,9 @@ issue_cert() {
     if [[ -d "$HOME/.acme.sh/${DOMAIN}_ecc" ]]; then
         echo -e "${GREEN}[✔] Certificado emitido con éxito.${NC}"
         
+        # Persistencia de Dominio para Tickets
+        echo "$DOMAIN" > /etc/kraker_domain
+        
         # Copiar y vincular a la ruta global del panel para compatibilidad total
         mkdir -p /etc/ws_ssl
         cp "$HOME/.acme.sh/${DOMAIN}_ecc/$DOMAIN.cer" "/etc/ws_ssl/server.crt"
