@@ -84,8 +84,9 @@ def main(port, cert, key, target_addr, target_port):
             # Envolver el socket de cliente individualmente para mayor estabilidad
             client = context.wrap_socket(raw_client, server_side=True)
             threading.Thread(target=handler, args=(client, target_addr, target_port), daemon=True).start()
-        except:
-            # Los fallos de handshake SSL no deben tirar el servidor
+        except Exception as e:
+            # Optimización Master: Evitar que el proceso consuma 100% CPU en caso de error crítico
+            time.sleep(1)
             if raw_client:
                 try: raw_client.close()
                 except: pass

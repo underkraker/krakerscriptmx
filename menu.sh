@@ -18,7 +18,11 @@ sys_stats() {
     RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
     RAM_PERC=$(( RAM_USED * 100 / RAM_TOTAL ))
     
-    CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}' | cut -d. -f1)
+    # Optimización Master: Usar loadavg (Ultra Ligero) en lugar de top
+    CPU_USAGE=$(awk '{print $1 * 100 / 4}' /proc/loadavg | cut -d. -f1) # Basado en 4 núcleos (Promedio)
+    # Si quieres una lectura exacta por núcleos detectados:
+    CPUS=$(grep -c ^processor /proc/cpuinfo)
+    CPU_USAGE=$(awk -v c="$CPUS" '{print ($1/c)*100}' /proc/loadavg | cut -d. -f1)
     [[ -z $CPU_USAGE ]] && CPU_USAGE=0
 
     UPTIME=$(uptime -p)
