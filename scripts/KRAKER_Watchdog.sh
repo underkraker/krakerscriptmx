@@ -44,14 +44,18 @@ else
     fi
 fi
 
-# 5. BadVPN (UDP Gaming)
-if screen -list | grep -q "UDP_Gaming"; then
+# 5. BadVPN (UDP Gaming) - Modern Systemd Monitoring
+if systemctl is-active --quiet kraker-udp; then
     : # OK
 else
-    if pgrep -x badvpn-udpgw > /dev/null 2>&1; then
-        : # OK
-    else
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [!] UDP GAMING CAÍDO. Restaurando..." >> $LOG_FILE
-        screen -dmS UDP_Gaming badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 500
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [!] UDP GAMING (systemd) CAÍDO. Restaurando..." >> $LOG_FILE
+    systemctl restart kraker-udp >> $LOG_FILE 2>&1
+    
+    # Fallback por si el servicio no existe o falla catastróficamente
+    if ! systemctl is-active --quiet kraker-udp; then
+        if ! pgrep -x badvpn-udpgw > /dev/null 2>&1; then
+             echo "[$(date '+%Y-%m-%d %H:%M:%S')] [!] EMERGENCIA: Reiniciando binario BadVPN directamente..." >> $LOG_FILE
+             screen -dmS UDP_Gaming badvpn-udpgw --listen-addr 0.0.0.0:7300 --max-clients 500
+        fi
     fi
 fi

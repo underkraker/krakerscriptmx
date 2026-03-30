@@ -16,25 +16,41 @@ tune_network() {
     sysctl -p > /dev/null 2>&1
 }
 
-# 2. Instalación BadVPN
+# 2. Instalación BadVPN (Compilación Profesional)
 install_badvpn() {
-    echo -e "${YELLOW}[2/3] Instalando BadVPN udpgw...${NC}"
-    if [[ ! -f /usr/bin/badvpn-udpgw ]]; then
-        local arch=$(uname -m)
-        local url="https://github.com/ambrop72/badvpn/releases/download/1.999.130/badvpn-linux-x86_64"
-        
-        if [[ $arch == "aarch64" || $arch == "arm64" ]]; then
-            url="https://github.com/itxtutor/badvpn/raw/master/badvpn-udpgw-arm64"
-        fi
-        
-        wget -O /usr/bin/badvpn-udpgw "$url" > /dev/null 2>&1
+    msg_header "INSTALANDO BADVPN UDPGW"
+    if [[ -f /usr/bin/badvpn-udpgw ]]; then
+        echo -e "${GREEN}[✔] BadVPN ya está instalado.${NC}"
+        return
+    fi
+
+    echo -e "${YELLOW}[*] Preparando dependencias de compilación...${NC}"
+    apt update -y > /dev/null 2>&1
+    apt install -y cmake build-essential wget tar > /dev/null 2>&1
+
+    echo -e "${YELLOW}[*] Descargando y compilando desde código fuente (Garantizado)...${NC}"
+    cd /tmp
+    wget https://github.com/ambrop72/badvpn/archive/1.999.130.tar.gz > /dev/null 2>&1
+    tar xvzf 1.999.130.tar.gz > /dev/null 2>&1
+    cd badvpn-1.999.130
+    mkdir build && cd build
+    cmake .. -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_UDPGW=1 > /dev/null 2>&1
+    make install > /dev/null 2>&1
+    
+    if [[ -f /usr/local/bin/badvpn-udpgw ]]; then
+        ln -sf /usr/local/bin/badvpn-udpgw /usr/bin/badvpn-udpgw
+        echo -e "${GREEN}[✔] BadVPN compilado con éxito.${NC}"
+    else
+        echo -e "${RED}[!] Error grave en la compilación. Reintentando binario genérico...${NC}"
+        wget -O /usr/bin/badvpn-udpgw "https://github.com/itxtutor/badvpn/raw/master/badvpn-udpgw-x86_64" > /dev/null 2>&1
         chmod +x /usr/bin/badvpn-udpgw
     fi
 }
 
-# 3. Servicio Systemd
+# 3. Servicio Systemd Elite
 create_service() {
-    echo -e "${YELLOW}[3/3] Iniciando Sistema de Prioridad Alta...${NC}"
+    msg_header "CONFIGURACIÓN DE SERVICIO UDP"
+    echo -e "${YELLOW}[*] Creando KRAKER UDP Service...${NC}"
     cat << 'EOF' > /etc/systemd/system/kraker-udp.service
 [Unit]
 Description=KRAKER MASTER - UDP Gateway
@@ -45,6 +61,8 @@ Type=simple
 User=root
 ExecStart=/usr/bin/badvpn-udpgw --listen-addr 0.0.0.0:7100 --max-clients 500 --listen-addr 0.0.0.0:7200 --max-clients 500 --listen-addr 0.0.0.0:7300 --max-clients 500
 Restart=always
+RestartSec=3
+LimitNOFILE=65535
 Nice=-20
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
@@ -55,15 +73,19 @@ EOF
     systemctl daemon-reload
     systemctl enable kraker-udp > /dev/null 2>&1
     systemctl restart kraker-udp > /dev/null 2>&1
+
+    # Abrir Puertos (Opcional - Firewall Detect)
+    if command -v ufw &> /dev/null; then
+        ufw allow 7100:7300/udp > /dev/null 2>&1
+    fi
 }
 
 msg_header "UDP GAMING OPTIMIZER"
-install_deps wget coreutils
 setup_motd
 tune_network
 install_badvpn
 create_service
 
-echo -e "${GREEN}✔ KRAKER UDP GAMING ACTIVADO!${NC}"
-echo -e "${CYAN}Puertos: 7100, 7200, 7300${NC}"
+echo -e "${GREEN}✔ KRAKER UDP GAMING ACTIVADO EXPOSIVAMENTE!${NC}"
+echo -e "${CYAN}Puertos: 7100 (Bajo), 7200 (Medio), 7300 (Alto)${NC}"
 echo -e "${BARRA}"
