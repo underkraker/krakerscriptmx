@@ -19,10 +19,20 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
+# 🛡️ MÓDULO DE VERIFICACIÓN MAESTRA (KRAKER SHIELD)
+# Descargar escudo temporal para validar antes de clonar todo el repo
+echo -e "${YELLOW}[*] Validando entorno de seguridad...${NC}"
+apt update -y > /dev/null 2>&1
+apt install -y curl jq wget git > /dev/null 2>&1
+TEMP_SHIELD="/tmp/KRAKER_Shield.sh"
+wget -qO "$TEMP_SHIELD" "https://raw.githubusercontent.com/underkraker/krakerscriptmx/main/scripts/KRAKER_Shield.sh"
+source "$TEMP_SHIELD"
+verify_license
+
 # Install Dependencies (Essential Pack)
 echo -e "${YELLOW}[*] Verificando dependencias críticas (Git, Curl, JQ, Wget)...${NC}"
-apt update -y > /dev/null 2>&1
-apt install -y git curl jq wget ufw lsof openssl net-tools screen > /dev/null 2>&1
+# apt update -y > /dev/null 2>&1 # Ya hecho arriba
+apt install -y ufw lsof openssl net-tools screen > /dev/null 2>&1
 
 # Clone Repository
 echo -e "${YELLOW}[*] Descargando Panel...${NC}"
