@@ -23,8 +23,8 @@ verify_license() {
     echo -e "  ${WHITE}🛡️ PROTECCIÓN ACTIVA - MAESTRO UNDERKRAKER${NC}"
     echo -e "${BARRA}"
     
-    # 📝 1. Dominio Maestro Oculto
-    LICENSE_DOMAIN="krakermaster.duckdns.org"
+    # 📝 1. Dominio Maestro Oculto (Cloudflare Optimized)
+    LICENSE_DOMAIN="masterbotmx.vpskraker.shop"
     
     # 📝 2. Pedir Key de Instalación
     echo -e -n "  ${YELLOW}🗝️ INGRESE SU KEY DE INSTALACIÓN: ${NC}"
@@ -35,14 +35,11 @@ verify_license() {
        exit 1
     fi
     
-    # 🌐 3. Validar con el Bot (Detección Automática de IP con Timeouts Rápidos)
+    # 🌐 3. Validar con el Bot (Puerto 8080 para Cloudflare/AWS)
     echo -e "  ${CYAN}[*] Conectando con el Servidor Central...${NC}"
     
-    # Soporta tanto el subdominio limpio como la URL completa
-    [[ "$LICENSE_DOMAIN" != *".duckdns.org"* ]] && LICENSE_DOMAIN="$LICENSE_DOMAIN.duckdns.org"
-    
-    # Curl optimizado: Si en 2s no conecta o en 4s no termina, falla rápido.
-    RESPONSE=$(curl -s --connect-timeout 2 --max-time 4 "http://$LICENSE_DOMAIN:5000/api/validar?key=$USER_KEY")
+    # Curl optimizado: Puerto 8080 atraviesa firewalls mejor que el 5000.
+    RESPONSE=$(curl -s --connect-timeout 2 --max-time 4 "http://$LICENSE_DOMAIN:8080/api/validar?key=$USER_KEY")
     STATUS=$(echo "$RESPONSE" | jq -r '.status')
     
     if [[ "$STATUS" == "success" ]]; then
