@@ -39,17 +39,32 @@ sys_stats() {
 # Menu Principal
 main_menu() {
     msg_banner
-    sys_stats
-    echo -e "  ${YELLOW}[01]${NC} ${WHITE}XRAY REALITY (VLESS)${NC}       ${YELLOW}[06]${NC} ${WHITE}TROJAN (XRAY)${NC}"
-    echo -e "  ${YELLOW}[02]${NC} ${WHITE}HYSTERIA V2 (UDP)${NC}          ${YELLOW}[07]${NC} ${WHITE}SHADOWSOCKS${NC}"
-    echo -e "  ${YELLOW}[03]${NC} ${WHITE}VPN SSL (STUNNEL)${NC}          ${YELLOW}[08]${NC} ${WHITE}UDP GAMING (HIGH SPEED)${NC}"
-    echo -e "  ${YELLOW}[04]${NC} ${WHITE}SSL GATEWAY (PYTHON)${NC}       ${YELLOW}[09]${NC} ${WHITE}KRAKER DNS SECURITY${NC}"
-    echo -e "  ${YELLOW}[05]${NC} ${WHITE}VMESS (XRAY)${NC}               ${YELLOW}[10]${NC} ${WHITE}DROPBEAR MANAGER${NC}"
-    echo -e "${BARRA}"
-    echo -e "  ${YELLOW}[11]${NC} ${WHITE}MANTENIMIENTO Y SISTEMA${NC}    ${YELLOW}[12]${NC} ${WHITE}GESTIÓN DE USUARIOS${NC}"
-    echo -e "  ${YELLOW}[13]${NC} ${WHITE}TEST DE VELOCIDAD${NC}          ${YELLOW}[14]${NC} ${MAGENTA}GESTOR DE SERVICIOS${NC}"
-    echo -e "  ${YELLOW}[00]${NC} ${RED}SALIR DEL MENU${NC}"
-    echo -e "${BARRA}"
+    IP_EXT=$(get_ip)
+    OS=$(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2 || echo "Linux VPS")
+    UPTIME=$(uptime -p)
+    CPU_USAGE=$(awk -v c="$(grep -c ^processor /proc/cpuinfo)" '{print ($1/c)*100}' /proc/loadavg | cut -d. -f1)
+    RAM_TOTAL=$(free -m | awk '/Mem:/ { print $2 }')
+    RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
+    RAM_PERC=$(( RAM_USED * 100 / RAM_TOTAL ))
+
+    echo -e "${B_TOP}"
+    echo -e "  ${WHITE}SISTEMA: ${GREEN}$OS${NC}"
+    echo -e "  ${WHITE}IP PUB : ${CYAN}$IP_EXT${NC}   ${WHITE}UPTIME: ${GREEN}$UPTIME${NC}"
+    echo -e "  ${WHITE}CPU    : $(get_resource_bar $CPU_USAGE)   ${WHITE}RAM: $(get_resource_bar $RAM_PERC)${NC}"
+    echo -e "${B_SEP}"
+    echo -e "  ${ICON_XRAY} ${CYAN}══ PROTOS XRAY (TCP/WS) ══${NC}      ${ICON_V2} ${MAGENTA}══ UDP & TUNNELS ══${NC}"
+    echo -e "  $(get_status 443) ${GRAY}[01]${NC} Xray Reality       $(get_status 443) ${GRAY}[02]${NC} Hysteria v1/v2"
+    echo -e "  $(get_status 2083) ${GRAY}[05]${NC} VMess WS+TLS       $(get_status 442) ${GRAY}[03]${NC} VPN SSL (Stunnel)"
+    echo -e "  $(get_status 2053) ${GRAY}[06]${NC} Trojan WS+TLS      $(get_status 443) ${GRAY}[04]${NC} SSL Gateway (Py)"
+    echo -e "  $(get_status 2096) ${GRAY}[07]${NC} Shadowsocks WS     $(get_status 7100) ${GRAY}[08]${NC} UDP Gaming"
+    echo -e "${B_SEP}"
+    echo -e "  ${ICON_SYS} ${YELLOW}══ GESTIÓN Y SISTEMA ══${NC}"
+    echo -e "  ${GRAY}[11]${NC} Mantenimiento       ${GRAY}[12]${NC} Gestión de Usuarios"
+    echo -e "  ${GRAY}[13]${NC} Test de Velocidad   ${GRAY}[14]${NC} Gestor de Servicios"
+    echo -e "  ${GRAY}[09]${NC} DNS Security        ${GRAY}[10]${NC} Dropbear Manager"
+    echo -e "${B_SEP}"
+    echo -e "                 ${RED}[00] SALIR DEL PANEL DE CONTROL${NC}"
+    echo -e "${B_BOT}"
     echo -en "  ${CYAN}SELECCIONE UNA OPCIÓN: ${NC}"
     read opt
 
@@ -57,7 +72,7 @@ main_menu() {
         1|01) bash "$SOURCE_DIR/scripts/Xray_Reality.sh" ;;
         2|02) bash "$SOURCE_DIR/scripts/Hysteria_v2.sh" ;;
         3|03) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
-        4|04) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;; # Reutiliza el instalador de SSL
+        4|04) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
         5|05) bash "$SOURCE_DIR/scripts/KRAKER_VMess.sh" ;;
         6|06) bash "$SOURCE_DIR/scripts/KRAKER_Trojan.sh" ;;
         7|07) bash "$SOURCE_DIR/scripts/KRAKER_Shadowsocks.sh" ;;
@@ -65,27 +80,15 @@ main_menu() {
         9|09) bash "$SOURCE_DIR/scripts/KRAKER_DNS.sh" ;;
         10) bash "$SOURCE_DIR/scripts/KRAKER_Dropbear.sh" ;;
         11) bash "$SOURCE_DIR/scripts/KRAKER_System.sh" ;;
-        12)
-            install_deps jq
-            bash "$SOURCE_DIR/scripts/KRAKER_User.sh"
-            ;;
+        12) bash "$SOURCE_DIR/scripts/KRAKER_User.sh" ;;
         13) 
-            echo -e "${YELLOW}Ejecutando Test de Velocidad...${NC}"
+            echo -e "${YELLOW}Ejecutando Test...${NC}"
             install_deps speedtest-cli
             speedtest-cli
             ;;
-        14)
-            bash "$SOURCE_DIR/scripts/KRAKER_Services.sh"
-            ;;
-        0|00) 
-            clear
-            echo -e "${GREEN}Gracias por usar KRAKER MASTER PANEL!${NC}"
-            exit 0 
-            ;;
-        *) 
-            echo -e "${RED}Opción inválida!${NC}" 
-            sleep 1 
-            ;;
+        14) bash "$SOURCE_DIR/scripts/KRAKER_Services.sh" ;;
+        0|00) clear; echo -e "${GREEN}¡Hasta pronto!${NC}"; exit 0 ;;
+        *) echo -e "${RED}Opción inválida!${NC}"; sleep 1 ;;
     esac
 }
 

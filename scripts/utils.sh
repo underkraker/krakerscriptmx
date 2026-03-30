@@ -2,7 +2,7 @@
 # KRAKER MASTER - Shared Utilities & UI Library
 # Optimized for VPS Management - Elite Dashboard
 
-# Colores Premium - Standard Palette
+# Colores Elite Master - Paleta Extendida
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -10,41 +10,58 @@ BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[1;37m'
+GRAY='\033[0;90m'
 NC='\033[0m'
 
-# Aliases for consistency with legacy scripts
-VERDE=$GREEN
-ROJO=$RED
-AMARILLO=$YELLOW
-AZUL=$CYAN
-RESET=$NC
-BARRA="${CYAN}----------------------------------------------------------------------------------------------------${NC}"
+# Simbología de Élite
+ON="${GREEN}●${NC}"
+OFF="${RED}○${NC}"
+ICON_V2="${CYAN}🐉${NC}"
+ICON_XRAY="${MAGENTA}🛡️${NC}"
+ICON_GAME="${YELLOW}🎮${NC}"
+ICON_SSL="${BLUE}🔒${NC}"
+ICON_SYS="${GRAY}⚙️${NC}"
 
-# ASCII Art Visual Branding
+# Líneas y Bordes Unicode
+BARRA="${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+B_TOP="${GRAY}╔════════════════════════════════════════════════════════════════════════════════════════════════════╗${NC}"
+B_BOT="${GRAY}╚════════════════════════════════════════════════════════════════════════════════════════════════════╝${NC}"
+B_SEP="${GRAY}╟────────────────────────────────────────────────────────────────────────────────────────────────────╢${NC}"
+
+# ASCII Art Visual Branding Master
 msg_banner() {
     clear
-    echo -e "${CYAN}  ██╗  ██╗██████╗  █████╗ ██╗  ██╗███████╗██████╗     ███╗   ███╗ █████╗ ███████╗████████╗███████╗██████╗ ${NC}"
-    echo -e "${CYAN}  ██║ ██╔╝██╔══██╗██╔══██╗██║ ██╔╝██╔════╝██╔══██╗    ████╗ ████║██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔══██╗${NC}"
-    echo -e "${GREEN}  █████╔╝ ██████╔╝███████║█████╔╝ █████╗  ██████╔╝    ██╔████╔██║███████║███████╗   ██║   █████╗  ██████╔╝${NC}"
-    echo -e "${GREEN}  ██╔═██╗ ██╔══██╗██╔══██║██╔═██╗ ██╔══╝  ██╔══██╗    ██║╚██╔╝██║██╔══██║╚════██║   ██║   ██╔══╝  ██╔══██╗${NC}"
-    echo -e "${WHITE}  ██║  ██╗██║  ██║██║  ██║██║  ██╗███████╗██║  ██║    ██║ ╚═╝ ██║██║  ██║███████║   ██║   ███████╗██║  ██║${NC}"
-    echo -e "${WHITE}  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝${NC}"
-    echo -e "${YELLOW}                            PANEL DE CONTROL ELITE - VERSION 2.0${NC}"
-    echo -e "${BARRA}"
+    echo -e "${CYAN}    ██╗  ██╗██████╗  █████╗ ██╗  ██╗███████╗██████╗     ███╗   ███╗ █████╗ ███████╗████████╗███████╗██████╗ ${NC}"
+    echo -e "${CYAN}    ██║ ██╔╝██╔══██╗██╔══██╗██║ ██╔╝██╔════╝██╔══██╗    ████╗ ████║██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔══██╗${NC}"
+    echo -e "${GREEN}    █████╔╝ ██████╔╝███████║█████╔╝ █████╗  ██████╔╝    ██╔████╔██║███████║███████╗   ██║   █████╗  ██████╔╝${NC}"
+    echo -e "${GREEN}    ██╔═██╗ ██╔══██╗██╔══██║██╔═██╗ ██╔══╝  ██╔══██╗    ██║╚██╔╝██║██╔══██║╚════██║   ██║   ██╔══╝  ██╔══██╗${NC}"
+    echo -e "${WHITE}    ██║  ██╗██║  ██║██║  ██║██║  ██╗███████╗██║  ██║    ██║ ╚═╝ ██║██║  ██║███████║   ██║   ███████╗██║  ██║${NC}"
+    echo -e "${WHITE}    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝${NC}"
+    echo -e "${GRAY}                               PANEL DE CONTROL ELITE - VERSION EXTREME${NC}"
+}
+
+# Live Status Indicator
+get_status() {
+    local port=$1
+    if ss -ntlp | grep -q ":$port " || ss -nulp | grep -q ":$port "; then
+        echo -e "${ON}"
+    else
+        echo -e "${OFF}"
+    fi
 }
 
 # Simple Header for sub-scripts
 msg_header() {
     clear
-    echo -e "${BARRA}"
-    echo -e "${CYAN}  🐲 KRAKER VPS - $1 🐲${NC}"
-    echo -e "${BARRA}"
+    echo -e "${B_TOP}"
+    echo -e "  ${ICON_XRAY} ${CYAN}KRAKER MASTER PANEL - $1${NC}"
+    echo -e "${B_BOT}"
 }
 
 # System Checks
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}[!] ¡ERROR! Este script debe ejecutarse como ROOT.${NC}"
+        echo -e "${RED}[!] ¡ERROR! Ejecuta como ROOT.${NC}"
         exit 1
     fi
 }
@@ -68,17 +85,17 @@ get_resource_bar() {
     for ((i=0; i<filled; i++)); do bar+="█"; done
     for ((i=0; i<empty; i++)); do bar+="░"; done
     
-    echo -ne "${color}[${bar}] ${percent}%${NC}"
+    echo -ne "${color}${bar}${GRAY}${GRAY:0:0} ${percent}%${NC}"
 }
 
 # Dependency Manager
 install_deps() {
     local deps=("$@")
-    echo -e "${YELLOW}[*] Verificando dependencias: ${deps[*]}${NC}"
+    echo -e "${GRAY}[*] Verificando dependencias: ${deps[*]}${NC}"
     apt update -y > /dev/null 2>&1
     for dep in "${deps[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            echo -e "${AMARILLO}[+] Instalando $dep...${NC}"
+            echo -e "${YELLOW}[+] Instalando $dep...${NC}"
             apt install -y "$dep" > /dev/null 2>&1
         fi
     done
@@ -101,29 +118,16 @@ EOF
 get_active_ports() {
     local tcp_show=""
     local udp_show=""
-    local gaming=""
     
-    # 1. Escanear Puertos TCP
     for p in 80 443 143 442 2053 2083 2087 2096 4433; do
         ss -ntlp | grep -q ":$p " && tcp_show+="$p "
     done
-    
-    # 2. Escanear Puertos UDP
-    for p in 443 53 5300 36712; do
+    for p in 443 53 5300 36712 7100 7200 7300; do
         ss -nulp | grep -q ":$p " && udp_show+="$p "
-    done
-
-    # 3. Escanear Puertos Gaming
-    for p in 7100 7200 7300; do
-        if ss -ntlp | grep -q ":$p " || pgrep -x "badvpn-udpgw" > /dev/null; then
-            gaming+="$p "
-        fi
     done
     
     local output=""
     [[ ! -z $tcp_show ]] && output+="${GREEN}TCP:${NC} $tcp_show "
     [[ ! -z $udp_show ]] && output+="${MAGENTA}UDP:${NC} $udp_show "
-    [[ ! -z $gaming ]] && output+="${CYAN}[GAME:$gaming]${NC}"
-    
     echo -e "${output:-NINGUNO}"
 }
