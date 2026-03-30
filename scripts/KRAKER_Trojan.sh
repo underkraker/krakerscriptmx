@@ -6,18 +6,29 @@
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
-# 1. Configuración Interactiva
-msg_header "TROJAN WS + TLS SETUP"
+# 1. Configuración Master de Trojan
+msg_header "TROJAN WS + TLS [MASTER SELECTOR]"
+echo -e "${YELLOW}[1] > ${WHITE}MODO AUTO (Usar IP del VPS para el Túnel)${NC}"
+echo -e "${YELLOW}[2] > ${WHITE}MODO DOMINIO (Usar tu propio Dominio)${NC}"
+echo -e "${BARRA}"
+read -p "Seleccione modo [1-2]: " TR_MODE
+
 install_deps curl jq openssl coreutils ufw lsof
+IP_PUB=$(get_ip)
 
-read -p "Introduce tu SNI Bug: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+if [[ "$TR_MODE" == "2" ]]; then
+    read -p "Ingresa tu Dominio: " BUG
+else
+    BUG=$IP_PUB
+fi
+[[ -z $BUG ]] && BUG=$IP_PUB
 
-read -p "Puerto para Trojan [2053]: " PORT
-[[ -z $PORT ]] && PORT=2053
-
-PASS=$(openssl rand -hex 8)
-IP=$(get_ip)
+# Puerto Detectado (Predeterminado 2053)
+PORT=2053
+if ss -ntlp | grep -q ":2053 "; then
+    PORT=2087
+    echo -e "${YELLOW}[!] Puerto 2053 ocupado. Usando alternativo: $PORT${NC}"
+fi
 
 # 2. Xray Core Integrity (Master Check)
 install_xray() {
@@ -26,23 +37,15 @@ install_xray() {
         echo -e "${YELLOW}[*] Instalando núcleo oficial de Xray...${NC}"
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
     fi
-    
-    if [[ -s /usr/local/bin/xray ]]; then
-        echo -e "${GREEN}[✔] Núcleo Xray Detectado ($(ls -lh /usr/local/bin/xray | awk '{print $5}'))${NC}"
-    else
-        echo -e "${RED}[!] Error Fatal: No se pudo instalar Xray Core.${NC}"
-        exit 1
-    fi
 }
 
-# 3. Configuración con Coexistencia JQ
+# 3. Datos y Configuración
 install_xray
 PASS=$(openssl rand -hex 8)
-IP=$(get_ip)
 
-echo -e "${YELLOW}[*] Generando certificados y configuración Trojan...${NC}"
+echo -e "${YELLOW}[*] Generando certificados y configuración Trojan para $BUG...${NC}"
 mkdir -p /etc/kraker_trojan
-openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_trojan/server.key -out /etc/kraker_trojan/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
+openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_trojan/server.key -out /etc/kraker_trojan/server.crt -subj "/CN=$BUG" -days 3650 2>/dev/null
 
 cat << EOM > /usr/local/etc/xray/trojan_inbound.json
 {
@@ -56,7 +59,7 @@ cat << EOM > /usr/local/etc/xray/trojan_inbound.json
 }
 EOM
 
-# Inyectar en Configuración Maestra
+# Inyectar en Configuración Maestra con JQ
 if [ ! -f /usr/local/etc/xray/config.json ]; then
     echo "{\"log\": {\"loglevel\": \"warning\"}, \"inbounds\": [], \"outbounds\": [{\"protocol\": \"freedom\"}]}" > /usr/local/etc/xray/config.json
 fi
@@ -67,18 +70,15 @@ rm /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/trojan_inbound.json
 
 # 4. Activación y Verificación
 systemctl daemon-reload
-systemctl enable xray > /dev/null 2>&1
 systemctl restart xray > /dev/null 2>&1
 ufw allow $PORT/tcp > /dev/null 2>&1
 
+LINK="trojan://$PASS@$IP_PUB:$PORT?security=tls&sni=$BUG&fp=chrome&type=ws&path=/krakervps#KRAKER_TROJAN"
+msg_header "TROJAN INSTALADO CON ÉXITO"
 if systemctl is-active --quiet xray; then
-    echo -e "${GREEN}[✔] SERVICIO XRAY REINICIADO (MODO TROJAN ADICIONADO)${NC}"
+    echo -e "${GREEN}✔ KRAKER TROJAN ACTIVO (PUERTO $PORT)${NC}"
+    echo -e "${YELLOW}Enlace:${NC} $LINK"
 else
-    echo -e "${RED}[!] Error: El servicio falló. Revisa 'journalctl -u xray'${NC}"
+    echo -e "${RED}[!] Error: Xray no inició. Revisa logs.${NC}"
 fi
-
-LINK="trojan://$PASS@$IP:$PORT?security=tls&sni=$BUG&fp=chrome&type=ws&path=/krakervps#KRAKER_TROJAN"
-msg_header "TROJAN INSTALADO (PUERTO $PORT)"
-echo -e "${GREEN}✔ KRAKER TROJAN COEXISTIENDO CON ÉXITO!${NC}"
-echo -e "${YELLOW}Enlace:${NC} $LINK"
 echo -e "${BARRA}"
