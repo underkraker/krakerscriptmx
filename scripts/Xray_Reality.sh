@@ -47,35 +47,44 @@ if ss -ntlp | grep -q ":443 "; then
     echo -e "${YELLOW}[!] Puerto 443 OCUPADO. Usando Puerto Alternativo: $PORT${NC}"
 fi
 
-# Generar Configuración Base
+# Generar Configuración Base (Usando JQ para Inmunidad Vital)
 mkdir -p /usr/local/etc/xray
-cat > /usr/local/etc/xray/config.json <<EOF
-{
-    "log": {"loglevel": "warning"},
-    "inbounds": [{
-        "port": $PORT, "protocol": "vless", "tag": "REALITY_INBOUND",
-        "settings": {"clients": [{"id": "$UUID", "flow": "xtls-rprx-vision"}], "decryption": "none"},
+echo "{}" | jq \
+    --arg port "$PORT" \
+    --arg uuid "$UUID" \
+    --arg dest "$BUG:443" \
+    --arg sni "$BUG" \
+    --arg pbk "$PRIVATE_KEY" \
+    --arg sid "$SHORT_ID" \
+    '
+    .log = {"loglevel": "warning"} |
+    .inbounds = [{
+        "port": ($port | tonumber), "protocol": "vless", "tag": "REALITY_INBOUND",
+        "settings": {"clients": [{"id": $uuid, "flow": "xtls-rprx-vision"}], "decryption": "none"},
         "streamSettings": {
             "network": "tcp", "security": "reality",
             "realitySettings": {
-                "show": false, "dest": "$BUG:443", "xver": 0,
-                "serverNames": ["$BUG"], "privateKey": "$PRIVATE_KEY", "shortIds": ["$SHORT_ID"]
+                "show": false, "dest": $dest, "xver": 0,
+                "serverNames": [$sni], "privateKey": $pbk, "shortIds": [$sid]
             }
         },
         "sniffing": {"enabled": true, "destOverride": ["http", "tls"]}
-    }],
-    "outbounds": [{"protocol": "freedom"}]
-}
-EOF
+    }] |
+    .outbounds = [{"protocol": "freedom"}]
+    ' > /usr/local/etc/xray/config.json
 
-# Validar Configuración antes de iniciar
-echo -e "${YELLOW}[*] Probando integridad del Código JSON...${NC}"
+# Validar Configuración con Diagnóstico Visible
+echo -e "${YELLOW}[*] Validando consistencia del Protocolo...${NC}"
 if /usr/local/bin/xray test -c /usr/local/etc/xray/config.json > /dev/null 2>&1; then
-    echo -e "${GREEN}[✔] Código JSON Válido y Perfecto.${NC}"
+    echo -e "${GREEN}[✔] Protocolo Xray Reality Validado.${NC}"
 else
-    echo -e "${RED}[!] Error en el JSON. Usando destino de respaldo (google)...${NC}"
-    sed -i "s/\"dest\": \"$BUG:443\"/\"dest\": \"www.google.com:443\"/" /usr/local/etc/xray/config.json
-    sed -i "s/\"serverNames\": \[\"$BUG\"\]/\"serverNames\": \[\"www.google.com\"\]/" /usr/local/etc/xray/config.json
+    echo -e "${RED}[!] Error Detectado en SNI. Iniciando Auto-Reparación...${NC}"
+    sleep 2
+    # Auto-Reparación a Destino Seguro
+    jq '.inbounds[0].streamSettings.realitySettings.dest = "www.google.com:443" | .inbounds[0].streamSettings.realitySettings.serverNames = ["www.google.com"]' \
+        /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
+    mv /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/config.json
+    echo -e "${GREEN}[✔] Auto-Reparación Completada (Destino: Google).${NC}"
 fi
 
 # 4. Activación Maestro
