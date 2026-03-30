@@ -107,13 +107,17 @@ get_active_ports() {
         ss -ntlp | grep -q ":$p " && ports+="$p "
     done
     
-    # Check Gaming/BadVPN TCP Gateway ports
+    # Check Gaming/BadVPN (Standard Detection + Process Detection)
     for p in 7100 7200 7300; do
-        ss -ntlp | grep -q ":$p " && gaming+="$p "
+        if ss -ntlp | grep -q ":$p " || pgrep -x "badvpn-udpgw" > /dev/null; then
+            gaming+="$p "
+        fi
     done
     
     if [[ ! -z $gaming ]]; then
-        echo -e "${ports}${MAGENTA}[UDP:$gaming]${NC}"
+        # Remove duplicate space and add label
+        gaming_clean=$(echo $gaming | xargs)
+        echo -e "${ports}${MAGENTA}[UDP:$gaming_clean]${NC}"
     else
         echo -e "$ports"
     fi
