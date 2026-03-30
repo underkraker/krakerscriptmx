@@ -21,57 +21,67 @@ install_xray() {
     echo -e "${YELLOW}[*] Verificando Xray-core...${NC}"
     if [[ ! -s /usr/local/bin/xray ]]; then
         echo -e "${YELLOW}[*] Descargando Xray Core...${NC}"
+    msg_header "VERIFICANDO XRAY PARA VMESS"
+    if [[ ! -s /usr/local/bin/xray-vmess ]]; then
+        echo -e "${YELLOW}[*] Instalando Binario Xray dedicado...${NC}"
+        cp /usr/local/bin/xray /usr/local/bin/xray-vmess > /dev/null 2>&1 || \
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
+        cp /usr/local/bin/xray /usr/local/bin/xray-vmess 2>/dev/null
     fi
 }
 
-# 3. Configuración con Coexistencia (JQ)
+# 3. Datos y Configuración
 install_xray
-UUID=$(/usr/local/bin/xray uuid)
+UUID=$(/usr/local/bin/xray-vmess uuid 2>/dev/null || echo "kraker-uuid-$(date +%s)")
 IP=$(get_ip)
 
-# 2. Certificados y Directorios
-echo -e "${YELLOW}[*] Generando certificados...${NC}"
+echo -e "${YELLOW}[*] Generando certificados WS...${NC}"
 mkdir -p /etc/kraker_vmess
 openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_vmess/server.key -out /etc/kraker_vmess/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
 
-echo -e "${YELLOW}[*] Configurando Inbound VMess...${NC}"
-cat << EOM > /usr/local/etc/xray/vmess_inbound.json
+cat << EOM > /etc/kraker_vmess/config.json
 {
-    "port": $PORT, "protocol": "vmess", "tag": "VMESS_INBOUND",
-    "settings": {"clients": [{"id": "$UUID", "alterId": 0}]},
-    "streamSettings": {
-        "network": "ws", "security": "tls",
-        "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
-        "wsSettings": { "path": "/krakervps" }
-    },
-    "sniffing": {"enabled": true, "destOverride": ["http", "tls"]}
+    "log": {"loglevel": "warning"},
+    "inbounds": [{
+        "port": $PORT, "protocol": "vmess",
+        "settings": {"clients": [{"id": "$UUID", "alterId": 0}]},
+        "streamSettings": {
+            "network": "ws", "security": "tls",
+            "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
+            "wsSettings": { "path": "/krakervps" }
+        }
+    }],
+    "outbounds": [{"protocol": "freedom"}]
 }
 EOM
 
-if [ ! -f /usr/local/etc/xray/config.json ]; then
-    echo "{\"log\": {\"loglevel\": \"warning\"}, \"inbounds\": [], \"outbounds\": [{\"protocol\": \"freedom\"}]}" > /usr/local/etc/xray/config.json
-fi
+# 4. Servicio Systemd Independiente
+cat << EOF > /etc/systemd/system/kraker-vmess.service
+[Unit]
+Description=KRAKER MASTER - VMess Service
+After=network.target
 
-# Eliminar inbound anterior de VMESS si existe para evitar duplicados
-jq 'del(.inbounds[] | select(.tag == "VMESS_INBOUND"))' /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
-# Añadir nuevo inbound
-jq --argjson new "$(cat /usr/local/etc/xray/vmess_inbound.json)" '.inbounds += [$new]' /usr/local/etc/xray/config.json.tmp > /usr/local/etc/xray/config.json
-rm /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/vmess_inbound.json
+[Service]
+ExecStart=/usr/local/bin/xray-vmess run -c /etc/kraker_vmess/config.json
+Restart=always
+User=root
 
-# 4. Finalización
-setup_motd
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable kraker-vmess > /dev/null 2>&1
+systemctl restart kraker-vmess > /dev/null 2>&1
 ufw allow $PORT/tcp > /dev/null 2>&1
-systemctl enable xray > /dev/null 2>&1
-systemctl restart xray > /dev/null 2>&1
 
 VMESS_JSON=$(cat << EOM
-{ "v": "2", "ps": "KRAKER_VPS_VMESS", "add": "$IP", "port": "$PORT", "id": "$UUID", "aid": "0", "scy": "auto", "net": "ws", "type": "none", "host": "$BUG", "path": "/krakervps", "tls": "tls", "sni": "$BUG" }
+{ "v": "2", "ps": "KRAKER_VMESS", "add": "$IP", "port": "$PORT", "id": "$UUID", "aid": "0", "scy": "auto", "net": "ws", "type": "none", "host": "$BUG", "path": "/krakervps", "tls": "tls", "sni": "$BUG" }
 EOM
 )
 LINK="vmess://$(echo -n "$VMESS_JSON" | base64 | tr -d '\n')"
 
-msg_header "VMESS INSTALACIÓN COMPLETADA"
-echo -e "${GREEN}✔ KRAKER VMESS INSTALADO CON ÉXITO!${NC}"
+msg_header "VMESS INSTALADO (PUERTO $PORT)"
+echo -e "${GREEN}✔ KRAKER VMESS ACTIVADO!${NC}"
 echo -e "${YELLOW}Enlace:${NC} $LINK"
 echo -e "${BARRA}"

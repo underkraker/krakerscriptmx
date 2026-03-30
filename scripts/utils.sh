@@ -102,31 +102,28 @@ get_active_ports() {
     local ports=""
     local gaming=""
     
-    # Check Standard TCP ports
-    for p in 80 443 143 442 2083 2087 2053; do
-        ss -ntlp | grep -q ":$p " && ports+="$p "
+    # 1. Escanear Puertos TCP (Lista Extendida)
+    for p in 80 443 143 442 2053 2083 2087 2096 4433; do
+        ss -ntlp | grep -q ":$p " && tcp_ports+="$p "
     done
     
-    # Check Gaming/BadVPN (Standard Detection + Process Detection)
+    # 2. Escanear Puertos UDP (Lista Extendida)
+    for p in 443 53 5300 36712; do
+        ss -nulp | grep -q ":$p " && udp_ports+="$p "
+    done
+
+    # 3. Escanear Puertos Gaming (BadVPN)
     for p in 7100 7200 7300; do
         if ss -ntlp | grep -q ":$p " || pgrep -x "badvpn-udpgw" > /dev/null; then
             gaming+="$p "
         fi
     done
-
-    # Check Hysteria and other UDP Protocols
-    local udp_ports=""
-    for p in 443 36712 53 5300; do
-        ss -nulp | grep -q ":$p " && udp_ports+="$p "
-    done
     
-    [[ ! -z $udp_ports ]] && ports+="${MAGENTA}[UDP:$udp_ports]${NC}"
+    # Construcción de la Línea Visual
+    local output=""
+    [[ ! -z $tcp_ports ]] && output+="${GREEN}TCP:${NC} $tcp_ports "
+    [[ ! -z $udp_ports ]] && output+="${MAGENTA}UDP:${NC} $udp_ports "
+    [[ ! -z $gaming ]] && output+="${CYAN}[GAME:$gaming]${NC}"
     
-    if [[ ! -z $gaming ]]; then
-        # Remove duplicate space and add label
-        gaming_clean=$(echo $gaming | xargs)
-        echo -e "${ports}${MAGENTA}[UDP:$gaming_clean]${NC}"
-    else
-        echo -e "$ports"
-    fi
+    echo -e "${output:-NINGUNO}"
 }

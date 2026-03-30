@@ -48,20 +48,21 @@ masquerade:
     url: https://$BUG/
 EOF
 
-# Service & Firewall
+# 4. Service & Firewall
 setup_motd
 ufw allow 443/udp > /dev/null 2>&1
+systemctl daemon-reload
 systemctl enable hysteria-server.service > /dev/null 2>&1
 systemctl restart hysteria-server.service > /dev/null 2>&1
 
-msg_header "HYSTERIA INSTALACIÓN COMPLETADA"
-echo -e "${GREEN}✔ KRAKER HYSTERIA v2 INSTALADO CON ÉXITO!${NC}"
+msg_header "HYSTERIA V2 ACTIVADO"
+echo -e "${GREEN}✔ KRAKER HYSTERIA v2 [PORT: 443 UDP] ACTIVADO!${NC}"
 echo -e "${BARRA}"
-echo -e "${YELLOW}DATOS DE CONEXIÓN:${NC}"
-echo -e "${CYAN}IP       :${NC} $IP"
-echo -e "${CYAN}Puerto   :${NC} 443 (UDP)"
-echo -e "${CYAN}Password :${NC} $PASS"
-echo -e "${CYAN}SNI Bug  :${NC} $BUG"
+echo -e "${YELLOW}IP       :${NC} $IP"
+echo -e "${YELLOW}Puerto   :${NC} 443 (UDP)"
+echo -e "${YELLOW}Password :${NC} $PASS"
+echo -e "${YELLOW}SNI Bug  :${NC} $BUG"
 echo -e "${BARRA}"
-echo -e "${GREEN}RECUERDA: Hysteria usa UDP para máxima velocidad.${NC}"
+echo -e "${CYAN}Link Hysteria:${NC}"
+echo -e "hysteria2://$PASS@$IP:443/?insecure=1&sni=$BUG#KRAKER_HY2"
 echo -e "${BARRA}"

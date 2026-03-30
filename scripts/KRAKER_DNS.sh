@@ -36,7 +36,7 @@ setup_network() {
 
 # 4. Crear Servicio
 create_service() {
-    echo -e "${YELLOW}[4/4] Creando Servicio KRAKER-DNS...${NC}"
+    msg_header "ACTIVANDO KRAKER-DNS"
     cat << EOF > /etc/systemd/system/kraker-dns.service
 [Unit]
 Description=KRAKER MASTER - SlowDNS
@@ -45,6 +45,7 @@ After=network.target
 [Service]
 ExecStart=/usr/bin/dnstt-server -udp :5300 -pub /etc/kraker_dns/server.pub -key /etc/kraker_dns/server.key -tunnel 127.0.0.1:80
 Restart=always
+User=root
 
 [Install]
 WantedBy=multi-user.target
@@ -54,7 +55,7 @@ EOF
     systemctl restart kraker-dns > /dev/null 2>&1
 }
 
-msg_header "EXTREME SLOWDNS SETUP"
+msg_header "EXTREME SLOWDNS ACTIVATION"
 setup_motd
 install_dnstt
 generate_keys
