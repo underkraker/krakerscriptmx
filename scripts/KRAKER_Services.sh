@@ -6,25 +6,30 @@
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
-# Listado de Servicios Clave
-SERVICES=("xray" "hysteria-server" "kraker-dns" "stunnel4" "dropbear")
-LABELS=("Xray (Reality/VMess/Trojan)" "Hysteria v2 (UDP 443)" "SlowDNS (UDP 53)" "VPN SSL (Stunnel)" "SSH Dropbear")
+# Listado de Servicios Clave (Unificado)
+# 1: Nombre Servicio/Proceso, 2: Etiqueta, 3: Tipo (systemd|screen|binary)
+SERVICES=("xray" "hysteria-server" "kraker_ssl" "kraker-dns" "badvpn-udpgw" "stunnel4" "dropbear")
+LABELS=("Xray (Reality/VMess/Trojan)" "Hysteria v2 (UDP 443)" "SSL Gateway (Python 443)" "SlowDNS (UDP 53)" "UDP Gaming (BandVPN)" "VPN SSL (Stunnel)" "SSH Dropbear")
+TYPES=("systemd" "systemd" "screen" "systemd" "binary" "systemd" "systemd")
 
 get_status() {
-    if systemctl is-active --quiet "$1"; then
-        echo -e "${GREEN}[ACTIVO]${NC}"
-    else
-        echo -e "${RED}[DETENIDO]${NC}"
-    fi
+    local type=$1
+    local name=$2
+    case $type in
+        systemd) systemctl is-active --quiet "$name" && echo -e "${GREEN}[ACTIVO]${NC}" || echo -e "${RED}[DETENIDO]${NC}" ;;
+        screen) screen -ls | grep -q "$name" && echo -e "${GREEN}[ACTIVO]${NC}" || echo -e "${RED}[DETENIDO]${NC}" ;;
+        binary) pgrep -f "$name" > /dev/null && echo -e "${GREEN}[ACTIVO]${NC}" || echo -e "${RED}[DETENIDO]${NC}" ;;
+    esac
 }
 
 manage_service() {
     local service=$1
     local label=$2
+    local type=$3
     clear
     msg_banner
     msg_header "GESTIONANDO: $label"
-    echo -e "Estado Actual: $(get_status "$service")"
+    echo -e "Estado Actual: $(get_status "$type" "$service")"
     echo -e "${BARRA}"
     echo -e "  ${YELLOW}[1]${NC} INICIAR SERVICIO"
     echo -e "  ${YELLOW}[2]${NC} DETENER SERVICIO (LIBERAR PUERTO)"
@@ -35,9 +40,20 @@ manage_service() {
     read cmd
 
     case $cmd in
-        1) systemctl start "$service" ;;
-        2) systemctl stop "$service" ;;
-        3) systemctl restart "$service" ;;
+        1) 
+           [[ $type == "systemd" ]] && systemctl start "$service"
+           [[ $type == "screen" ]] && echo -e "${YELLOW}Inicia el servicio desde su instalador (04).${NC}" && sleep 2
+           [[ $type == "binary" ]] && echo -e "${YELLOW}Inicia el servicio desde su instalador (08).${NC}" && sleep 2
+           ;;
+        2) 
+           [[ $type == "systemd" ]] && systemctl stop "$service"
+           [[ $type == "screen" ]] && screen -X -S "$service" quit > /dev/null 2>&1
+           [[ $type == "binary" ]] && pkill -f "$service"
+           fuser -k 443/tcp > /dev/null 2>&1 # Limpieza agresiva de puertos comunes
+           ;;
+        3) 
+           [[ $type == "systemd" ]] && systemctl restart "$service"
+           ;;
         0) return ;;
     esac
     echo -e "${GREEN}✔ Acción completada!${NC}"
@@ -48,11 +64,11 @@ main_service_menu() {
     clear
     msg_banner
     msg_header "GESTOR DE SERVICIOS KRAKER"
-    echo -e "Selecciona un servicio para administrar sus puertos:"
+    echo -e "Controla el encendido/apagado de cada puerto:"
     echo -e "${BARRA}"
     
     for i in "${!SERVICES[@]}"; do
-        printf "  ${YELLOW}[%02d]${NC} %-30s %b\n" $((i+1)) "${LABELS[$i]}" "$(get_status "${SERVICES[$i]}")"
+        printf "  ${YELLOW}[%02d]${NC} %-30s %b\n" $((i+1)) "${LABELS[$i]}" "$(get_status "${TYPES[$i]}" "${SERVICES[$i]}")"
     done
     
     echo -e "${BARRA}"
@@ -65,7 +81,7 @@ main_service_menu() {
     
     index=$((opt - 1))
     if [[ $index -ge 0 && $index -lt ${#SERVICES[@]} ]]; then
-        manage_service "${SERVICES[$index]}" "${LABELS[$index]}"
+        manage_service "${SERVICES[$index]}" "${LABELS[$index]}" "${TYPES[$index]}"
     else
         echo -e "${RED}Opción inválida!${NC}"
         sleep 1
