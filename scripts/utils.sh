@@ -28,13 +28,12 @@ B_TOP="${GRAY}╔═════════════════════
 B_BOT="${GRAY}╚════════════════════════════════════════════════════════════════════════════════════════════════════╝${NC}"
 B_SEP="${GRAY}╟────────────────────────────────────────────────────────────────────────────────────────────────────╢${NC}"
 
-# ASCII Art Visual Branding Master (Compact Version)
+# ASCII Art Visual Branding Master (Micro-Clear Edition)
 msg_banner() {
     clear
-    echo -e "${CYAN}  ██▄ █ █▀▀▄ █▀▀█ █ ▄▀ █▀▀ █▀▀▄   █▀▄▀█ █▀▀█ █▀▀ ▀▀█▀▀ █▀▀ █▀▀▄ ${NC}"
-    echo -e "${GREEN}  █  ▀█ █▄▄▀ █▄▄█ █▀▄  █▀▀ █▄▄▀   █ ▀ █ █▄▄█ ▀▀█   █   █▀▀ █▄▄▀ ${NC}"
-    echo -e "${WHITE}  ▀   ▀ ▀ ▀▀ ▀  ▀ ▀  ▀ ▀▀▀ ▀ ▀▀   ▀   ▀ ▀  ▀ ▀▀▀   ▀   ▀▀▀ ▀ ▀▀ ${NC}"
-    echo -e "${GRAY}               PANEL DE CONTROL ELITE - VERSION EXTREME${NC}"
+    echo -e "${CYAN}    █▄▀ █▀█ █▀█ █▄▀ █▀▀ █▀█    █▀▄▀█ █▀█ █▀▀ ▀█▀ █▀▀ █▀█ ${NC}"
+    echo -e "${GREEN}    █ █ █▀▄ █▀█ █ █ █▀▀ █▀▄    █ ▀ █ █▀█ ▄██  █  █▀▀ █▀▄ ${NC}"
+    echo -e "${GRAY}              PANEL DE CONTROL ELITE - VERSION EXTREME${NC}"
 }
 
 # Live Status Indicator
