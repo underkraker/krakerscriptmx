@@ -78,13 +78,14 @@ echo -e "${YELLOW}[*] Validando consistencia del Protocolo...${NC}"
 if /usr/local/bin/xray test -c /usr/local/etc/xray/config.json > /dev/null 2>&1; then
     echo -e "${GREEN}[✔] Protocolo Xray Reality Validado.${NC}"
 else
-    echo -e "${RED}[!] Error Detectado en SNI. Iniciando Auto-Reparación...${NC}"
-    sleep 2
+    echo -e "${RED}[!] ERROR EN SNI BUG: Tu SNI no es válido para Reality.${NC}"
+    echo -e "${YELLOW}[*] Iniciando Auto-Reparación (Esto tomará 5 segundos)...${NC}"
+    sleep 5
     # Auto-Reparación a Destino Seguro
     jq '.inbounds[0].streamSettings.realitySettings.dest = "www.google.com:443" | .inbounds[0].streamSettings.realitySettings.serverNames = ["www.google.com"]' \
         /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
     mv /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/config.json
-    echo -e "${GREEN}[✔] Auto-Reparación Completada (Destino: Google).${NC}"
+    echo -e "${GREEN}[✔] Auto-Reparación Completada con Éxito (Destino: Google).${NC}"
 fi
 
 # 4. Activación Maestro
