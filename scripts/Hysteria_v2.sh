@@ -10,31 +10,35 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 msg_header "HYSTERIA v2 - REPARACIÓN EXCLUSIVA"
 install_deps wget openssl coreutils ufw lsof
 
-read -p "Ingresa el SNI Bug para Hysteria: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+# 3. Detección de Arquitectura y SNI Automático
+msg_header "HYSTERIA v2 - MASTER OPTIMIZER"
+IP_PUB=$(get_ip)
+BUG=$IP_PUB
+echo -e "${YELLOW}[*] Generando SNI Automático: $BUG${NC}"
 
-# 2. Instalación Manual del Binario (GitHub Directo)
-echo -e "${YELLOW}[*] Descargando Binario Hysteria v2 directamente de GitHub...${NC}"
-# Forzar DNS 8.8.8.8 por si SlowDNS bloqueó la resolución
-grep -q "8.8.8.8" /etc/resolv.conf || echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+# Detección Inteligente de Arquitectura (AMD64 / ARM64)
+ARCH=$(uname -m)
+case $ARCH in
+    x86_64) BIN_URL="https://github.com/apernet/hysteria/releases/latest/download/hysteria-linux-amd64" ;;
+    aarch64) BIN_URL="https://github.com/apernet/hysteria/releases/latest/download/hysteria-linux-arm64" ;;
+    *) BIN_URL="https://github.com/apernet/hysteria/releases/latest/download/hysteria-linux-amd64" ;;
+esac
 
-wget -qO /usr/local/bin/hysteria "https://github.com/apernet/hysteria/releases/latest/download/hysteria-linux-amd64"
+echo -e "${YELLOW}[*] Descargando Hysteria v2 para arquitectura $ARCH...${NC}"
+wget -qO /usr/local/bin/hysteria "$BIN_URL"
 chmod +x /usr/local/bin/hysteria
 
-# Verificación Instantánea de Binario
-if [[ -s /usr/local/bin/hysteria ]]; then
-    echo -e "${GREEN}[✔] Binario Hysteria Verificado: $(/usr/local/bin/hysteria version | head -n 1)${NC}"
-else
-    echo -e "${RED}[!] Error Fatal: No se pudo descargar el binario de Hysteria. Revisa el internet de la VPS.${NC}"
-    exit 1
-fi
+# 4. UDP Boost (Optimización de Kernel para Gaming/Streaming)
+echo -e "${YELLOW}[*] Inyectando UDP Boost al Kernel...${NC}"
+sysctl -w net.core.rmem_max=16777216 > /dev/null 2>&1
+sysctl -w net.core.wmem_max=16777216 > /dev/null 2>&1
+sysctl -p > /dev/null 2>&1
 
-# 3. Certificado y Configuración YAML
+# 5. Certificado y Configuración YAML
 mkdir -p /etc/hysteria
-openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
+openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt -subj "/CN=$BUG" -days 3650 2>/dev/null
 
 PASS=$(openssl rand -hex 8)
-IP=$(get_ip)
 
 cat << EOF > /etc/hysteria/config.yaml
 listen: :443
@@ -47,20 +51,21 @@ auth:
 masquerade:
   type: proxy
   proxy:
-    url: https://$BUG/
+    url: https://www.google.com/
 EOF
 
-# 4. Creación de Servicio Systemd Dedicado
-echo -e "${YELLOW}[*] Configurando Servicio Systemd de Élite...${NC}"
+# 6. Activación Maestra con Systemd
 cat << EOF > /etc/systemd/system/hysteria-server.service
 [Unit]
-Description=KRAKER MASTER - Hysteria v2 Service
+Description=KRAKER MASTER - Hysteria v2 [UDP Boosted]
 After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/hysteria server -c /etc/hysteria/config.yaml
 Restart=always
 User=root
+# Optimización de límites de archivos
+LimitNOFILE=1000000
 
 [Install]
 WantedBy=multi-user.target
@@ -71,16 +76,12 @@ systemctl enable hysteria-server > /dev/null 2>&1
 systemctl restart hysteria-server > /dev/null 2>&1
 ufw allow 443/udp > /dev/null 2>&1
 
-# 5. BLOQUE DE VERIFICACIÓN FINAL
-echo -e "${BARRA}"
+# BLOQUE DE VERIFICACIÓN FINAL
 if systemctl is-active --quiet hysteria-server; then
-    echo -e "${GREEN}[✔] SERVICIO HYSTERIA ACTIVO Y CORRIENDO${NC}"
-    echo -e "${GREEN}[✔] PUERTO 443 UDP ABIERTO${NC}"
+    msg_header "HYSTERIA V2 - MASTER READY"
+    echo -e "${GREEN}✔ SERVICIO HYSTERIA ACTIVO Y CORRIENDO (UDP BOOST)${NC}"
+    echo -e "${YELLOW}Enlace :${NC} hysteria2://$PASS@$IP_PUB:443/?insecure=1&sni=$BUG#KRAKER_HY2"
 else
     echo -e "${RED}[!] Error: Hysteria falló al iniciar. Revisa 'journalctl -u hysteria-server'${NC}"
 fi
-echo -e "${BARRA}"
-
-msg_header "HYSTERIA V2 ACTIVADO"
-echo -e "${YELLOW}Enlace :${NC} hysteria2://$PASS@$IP:443/?insecure=1&sni=$BUG#KRAKER_HY2"
 echo -e "${BARRA}"
