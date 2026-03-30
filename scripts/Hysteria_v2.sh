@@ -6,8 +6,20 @@
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
-# 1. Configuración de Reparación Quirúrgica
-msg_header "HYSTERIA v2 - REPARACIÓN EXCLUSIVA"
+# 1. Menú Master de Hysteria
+msg_header "HYSTERIA MASTER MANAGER"
+echo -e "${YELLOW}[1] > ${WHITE}INSTALAR HYSTERIA v2 (MÁXIMA VELOCIDAD - PUERTO 443)${NC}"
+echo -e "${YELLOW}[2] > ${WHITE}INSTALAR HYSTERIA v1 (LEGACY - PUERTO 4433)${NC}"
+echo -e "${BARRA}"
+read -p "Seleccione versión [1-2]: " H_OPT
+
+if [[ "$H_OPT" == "2" ]]; then
+    bash "$SOURCE_DIR/KRAKER_Hysteria_v1.sh"
+    exit 0
+fi
+
+# 2. Configuración de Reparación Quirúrgica
+msg_header "HYSTERIA v2 - MASTER OPTIMIZER"
 install_deps wget openssl coreutils ufw lsof
 
 # 3. Detección de Arquitectura y SNI Automático
