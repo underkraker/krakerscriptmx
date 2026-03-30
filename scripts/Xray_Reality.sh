@@ -10,23 +10,25 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 msg_header "XRAY REALITY SETUP"
 install_deps curl jq openssl coreutils ufw lsof
 
-# 2. Xray Installation (Expert Mode)
+# 2. Instalación Maestro Xray
 install_xray() {
-    msg_header "VERIFICANDO XRAY-CORE"
-    # Si el archivo no existe o pesa 0 bytes, descargamos de nuevo
+    msg_header "MASTER XRAY INSTALLER"
     if [[ ! -s /usr/local/bin/xray ]]; then
-        echo -e "${YELLOW}[*] Instalando Xray-core oficialmente...${NC}"
+        echo -e "${YELLOW}[*] Instalando núcleo oficial de Xray...${NC}"
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
     fi
     
-    if [[ ! -s /usr/local/bin/xray ]]; then
-        echo -e "${RED}[!] Error: Falló la instalación de Xray. Usando Binario estático...${NC}"
-        wget -O /usr/local/bin/xray "https://github.com/underkraker/xray-static/raw/main/xray" > /dev/null 2>&1
+    # Verificación de Integridad
+    if [[ -s /usr/local/bin/xray ]]; then
+        echo -e "${GREEN}[✔] Binario Xray Verificado ($(ls -lh /usr/local/bin/xray | awk '{print $5}'))${NC}"
+    else
+        echo -e "${RED}[!] Error: Binario no detectado. Reintentando con estático...${NC}"
+        wget -qO /usr/local/bin/xray "https://github.com/underkraker/xray-static/raw/main/xray"
         chmod +x /usr/local/bin/xray
     fi
 }
 
-# 3. Datos y Configuración
+# 3. Datos y Configuración UNIFICADA
 install_xray
 UUID=$(/usr/local/bin/xray uuid)
 KEYS=$(/usr/local/bin/xray x25519)
@@ -38,13 +40,14 @@ IP_PUB=$(get_ip)
 read -p "Ingresa el SNI Bug para REALITY: " BUG
 [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
-# Port Check
 PORT=443
 if lsof -Pi :443 -sTCP:LISTEN -t >/dev/null ; then
     PORT=4433
     echo -e "${YELLOW}Aviso: Puerto 443 ocupado. Usando: $PORT${NC}"
 fi
 
+# Crear Configuración Base (Master)
+mkdir -p /usr/local/etc/xray
 cat > /usr/local/etc/xray/config.json <<EOF
 {
     "log": {"loglevel": "warning"},
@@ -64,17 +67,21 @@ cat > /usr/local/etc/xray/config.json <<EOF
 }
 EOF
 
-# 4. Activación del Servicio
+# 4. Activación Maestro
 systemctl daemon-reload
 systemctl enable xray > /dev/null 2>&1
 systemctl restart xray > /dev/null 2>&1
 ufw allow $PORT/tcp > /dev/null 2>&1
 
+if systemctl is-active --quiet xray; then
+    echo -e "${GREEN}[✔] SERVICIO XRAY CORRIENDO EN PUERTO $PORT${NC}"
+else
+    echo -e "${RED}[!] Error: El servicio no pudo iniciar. Revisa 'journalctl -u xray'${NC}"
+fi
+
 LINK="vless://$UUID@$IP_PUB:$PORT?security=reality&sni=$BUG&fp=chrome&pbk=$PUBLIC_KEY&sid=$SHORT_ID&type=tcp&flow=xtls-rprx-vision#KRAKER_REALITY"
 
 msg_header "REALITY INSTALACIÓN COMPLETADA"
 echo -e "${GREEN}✔ KRAKER REALITY ACTIVADO!${NC}"
-echo -e "${BARRA}"
-echo -e "${YELLOW}Puerto :${NC} $PORT"
 echo -e "${YELLOW}Enlace :${NC} $LINK"
 echo -e "${BARRA}"

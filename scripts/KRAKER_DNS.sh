@@ -39,9 +39,21 @@ setup_network() {
     iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5300
 }
 
-# 4. Crear Servicio
+# 4. Servicio y Verificación
 create_service() {
     msg_header "ACTIVANDO KRAKER-DNS"
+    
+    # 1. Asegurar binario
+    if [[ ! -s /usr/bin/dnstt-server ]]; then
+        echo -e "${YELLOW}[*] El binario no existe. Reinstalando...${NC}"
+        install_dnstt
+    fi
+    
+    if [[ -s /usr/bin/dnstt-server ]]; then
+        echo -e "${GREEN}[✔] Binario dnstt-server Verificado ($(ls -lh /usr/bin/dnstt-server | awk '{print $5}'))${NC}"
+    fi
+
+    # 2. Configurar Servicio
     cat << EOF > /etc/systemd/system/kraker-dns.service
 [Unit]
 Description=KRAKER MASTER - SlowDNS
@@ -55,16 +67,20 @@ User=root
 [Install]
 WantedBy=multi-user.target
 EOF
+
     systemctl daemon-reload
     systemctl enable kraker-dns > /dev/null 2>&1
     systemctl restart kraker-dns > /dev/null 2>&1
+    
+    if systemctl is-active --quiet kraker-dns; then
+        echo -e "${GREEN}[✔] SERVICIO SLOWDNS ACTIVO EN PUERTO 5300${NC}"
+    fi
 }
 
 msg_header "EXTREME SLOWDNS ACTIVATION"
 setup_motd
-install_dnstt
-generate_keys
 setup_network
+generate_keys
 create_service
 
 echo -e "${GREEN}✔ KRAKER DNS (SlowDNS) ACTIVADO!${NC}"

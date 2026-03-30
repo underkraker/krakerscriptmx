@@ -16,67 +16,63 @@ read -p "Introduce tu SNI Bug: " BUG
 read -p "Puerto para VMess [2083]: " PORT
 [[ -z $PORT ]] && PORT=2083
 
-# 2. Xray Installation (Expert Mode)
+# 2. Xray Core Integrity (Master Check)
 install_xray() {
-    msg_header "VERIFICANDO XRAY"
-    # 1. Asegurar binario principal
+    msg_header "VERIFICANDO NÚCLEO XRAY"
     if [[ ! -s /usr/local/bin/xray ]]; then
         echo -e "${YELLOW}[*] Instalando Xray-core oficialmente...${NC}"
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
     fi
-    # 2. Asegurar binario dedicado para VMess
-    if [[ ! -s /usr/local/bin/xray-vmess ]]; then
-        echo -e "${YELLOW}[*] Creando binario dedicado para VMess...${NC}"
-        cp /usr/local/bin/xray /usr/local/bin/xray-vmess > /dev/null 2>&1 || \
-        wget -O /usr/local/bin/xray-vmess "https://github.com/underkraker/xray-static/raw/main/xray" > /dev/null 2>&1
-        chmod +x /usr/local/bin/xray-vmess
+    
+    if [[ -s /usr/local/bin/xray ]]; then
+        echo -e "${GREEN}[✔] Núcleo Xray Detectado ($(ls -lh /usr/local/bin/xray | awk '{print $5}'))${NC}"
+    else
+        echo -e "${RED}[!] Error Fatal: No se pudo instalar Xray Core.${NC}"
+        exit 1
     fi
 }
 
-# 3. Datos y Configuración
+# 3. Configuración con Coexistencia JQ
 install_xray
-UUID=$(/usr/local/bin/xray-vmess uuid 2>/dev/null || echo "kraker-uuid-$(date +%s)")
+UUID=$(/usr/local/bin/xray uuid)
 IP=$(get_ip)
 
-echo -e "${YELLOW}[*] Generando certificados WS...${NC}"
+echo -e "${YELLOW}[*] Generando certificados y configuración VMess...${NC}"
 mkdir -p /etc/kraker_vmess
 openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_vmess/server.key -out /etc/kraker_vmess/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
 
-cat << EOM > /etc/kraker_vmess/config.json
+cat << EOM > /usr/local/etc/xray/vmess_inbound.json
 {
-    "log": {"loglevel": "warning"},
-    "inbounds": [{
-        "port": $PORT, "protocol": "vmess",
-        "settings": {"clients": [{"id": "$UUID", "alterId": 0}]},
-        "streamSettings": {
-            "network": "ws", "security": "tls",
-            "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
-            "wsSettings": { "path": "/krakervps" }
-        }
-    }],
-    "outbounds": [{"protocol": "freedom"}]
+    "port": $PORT, "protocol": "vmess", "tag": "VMESS_INBOUND",
+    "settings": {"clients": [{"id": "$UUID", "alterId": 0}]},
+    "streamSettings": {
+        "network": "ws", "security": "tls",
+        "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
+        "wsSettings": { "path": "/krakervps" }
+    }
 }
 EOM
 
-# 4. Servicio Systemd Independiente
-cat << EOF > /etc/systemd/system/kraker-vmess.service
-[Unit]
-Description=KRAKER MASTER - VMess Service
-After=network.target
+# Inyectar en Configuración Maestra
+if [ ! -f /usr/local/etc/xray/config.json ]; then
+    echo "{\"log\": {\"loglevel\": \"warning\"}, \"inbounds\": [], \"outbounds\": [{\"protocol\": \"freedom\"}]}" > /usr/local/etc/xray/config.json
+fi
 
-[Service]
-ExecStart=/usr/local/bin/xray-vmess run -c /etc/kraker_vmess/config.json
-Restart=always
-User=root
+jq 'del(.inbounds[] | select(.tag == "VMESS_INBOUND"))' /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
+jq --argjson new "$(cat /usr/local/etc/xray/vmess_inbound.json)" '.inbounds += [$new]' /usr/local/etc/xray/config.json.tmp > /usr/local/etc/xray/config.json
+rm /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/vmess_inbound.json
 
-[Install]
-WantedBy=multi-user.target
-EOF
-
+# 4. Activación y Verificación
 systemctl daemon-reload
-systemctl enable kraker-vmess > /dev/null 2>&1
-systemctl restart kraker-vmess > /dev/null 2>&1
+systemctl enable xray > /dev/null 2>&1
+systemctl restart xray > /dev/null 2>&1
 ufw allow $PORT/tcp > /dev/null 2>&1
+
+if systemctl is-active --quiet xray; then
+    echo -e "${GREEN}[✔] SERVICIO XRAY REINICIADO CON ÉXITO${NC}"
+else
+    echo -e "${RED}[!] Error: El servicio falló al reiniciar. Revisa 'journalctl -u xray'${NC}"
+fi
 
 VMESS_JSON=$(cat << EOM
 { "v": "2", "ps": "KRAKER_VMESS", "add": "$IP", "port": "$PORT", "id": "$UUID", "aid": "0", "scy": "auto", "net": "ws", "type": "none", "host": "$BUG", "path": "/krakervps", "tls": "tls", "sni": "$BUG" }
@@ -85,6 +81,6 @@ EOM
 LINK="vmess://$(echo -n "$VMESS_JSON" | base64 | tr -d '\n')"
 
 msg_header "VMESS INSTALADO (PUERTO $PORT)"
-echo -e "${GREEN}✔ KRAKER VMESS ACTIVADO!${NC}"
+echo -e "${GREEN}✔ KRAKER VMESS COEXISTIENDO CON ÉXITO!${NC}"
 echo -e "${YELLOW}Enlace:${NC} $LINK"
 echo -e "${BARRA}"

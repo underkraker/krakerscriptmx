@@ -99,30 +99,30 @@ EOF
 }
 
 get_active_ports() {
-    local ports=""
+    local tcp_show=""
+    local udp_show=""
     local gaming=""
     
-    # 1. Escanear Puertos TCP (Lista Extendida)
+    # 1. Escanear Puertos TCP
     for p in 80 443 143 442 2053 2083 2087 2096 4433; do
-        ss -ntlp | grep -q ":$p " && tcp_ports+="$p "
+        ss -ntlp | grep -q ":$p " && tcp_show+="$p "
     done
     
-    # 2. Escanear Puertos UDP (Lista Extendida)
+    # 2. Escanear Puertos UDP
     for p in 443 53 5300 36712; do
-        ss -nulp | grep -q ":$p " && udp_ports+="$p "
+        ss -nulp | grep -q ":$p " && udp_show+="$p "
     done
 
-    # 3. Escanear Puertos Gaming (BadVPN)
+    # 3. Escanear Puertos Gaming
     for p in 7100 7200 7300; do
         if ss -ntlp | grep -q ":$p " || pgrep -x "badvpn-udpgw" > /dev/null; then
             gaming+="$p "
         fi
     done
     
-    # Construcción de la Línea Visual
     local output=""
-    [[ ! -z $tcp_ports ]] && output+="${GREEN}TCP:${NC} $tcp_ports "
-    [[ ! -z $udp_ports ]] && output+="${MAGENTA}UDP:${NC} $udp_ports "
+    [[ ! -z $tcp_show ]] && output+="${GREEN}TCP:${NC} $tcp_show "
+    [[ ! -z $udp_show ]] && output+="${MAGENTA}UDP:${NC} $udp_show "
     [[ ! -z $gaming ]] && output+="${CYAN}[GAME:$gaming]${NC}"
     
     echo -e "${output:-NINGUNO}"
