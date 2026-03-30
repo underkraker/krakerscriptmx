@@ -25,17 +25,20 @@ def transfer(src, dst):
 
 def handler(client_socket, target_addr, target_port):
     try:
-        client_socket.setblocking(False)
-        time.sleep(HANDSHAKE_TIMEOUT)
+        # Optimización: Reducir latencia de detección (Eliminar sleep inútil)
+        client_socket.settimeout(0.3)
         is_websocket = False
+        data = b""
         try:
             data = client_socket.recv(BUFFER_SIZE)
             if data:
                 if any(data.startswith(m) for m in [b"GET", b"POST", b"CONNECT", b"HEAD"]):
                     is_websocket = True
                     client_socket.sendall(WS_RESPONSE.encode())
-        except: data = b""
-        client_socket.setblocking(True)
+        except:
+            # Si no hay datos inmediatos, asumimos Direct SSL
+            pass
+        client_socket.settimeout(None)
 
         remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         remote_socket.settimeout(5.0)
@@ -60,22 +63,32 @@ def main(port, cert, key, target_addr, target_port):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certfile=cert, keyfile=key)
     
+    # Bug corregido: Inicializar el socket 'server'
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     try:
         server.bind(('0.0.0.0', int(port)))
-        server.listen(100)
+        server.listen(500)
         # Optimización Turbo: Desactivar Algoritmo de Nagle
         server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        secure_server = context.wrap_socket(server, server_side=True)
         print(f"[*] KRAKER MASTER - Gateway v4.5 [Turbo Gaming] Activo en Puerto {port}")
     except Exception as e:
         print(f"[!] Error: {e}")
         sys.exit(1)
 
     while True:
+        raw_client = None
         try:
-            client, addr = secure_server.accept()
+            raw_client, addr = server.accept()
+            # Envolver el socket de cliente individualmente para mayor estabilidad
+            client = context.wrap_socket(raw_client, server_side=True)
             threading.Thread(target=handler, args=(client, target_addr, target_port), daemon=True).start()
-        except: pass
+        except:
+            # Los fallos de handshake SSL no deben tirar el servidor
+            if raw_client:
+                try: raw_client.close()
+                except: pass
 
 if __name__ == '__main__':
     if len(sys.argv) < 6:
