@@ -69,10 +69,18 @@ mv menu_bin menu.sh
 rm -f menu.sh.x.c
 
 for script in scripts/*.sh; do
-    if [[ -f "$script" && "$script" != "scripts/utils.sh" ]]; then
+    if [[ -f "$script" ]]; then
+        # EXCLUSIÓN CRÍTICA: utils.sh NUNCA se cifra ya que es fuente de funciones
+        if [[ "$script" == "scripts/utils.sh" ]]; then
+            continue
+        fi
+        
+        # Cifrar el resto
         shc -v -r -f "$script" -o "${script}_bin" > /dev/null 2>&1
-        mv "${script}_bin" "$script"
-        rm -f "${script}.x.c"
+        if [[ -f "${script}_bin" ]]; then
+            mv "${script}_bin" "$script"
+            rm -f "${script}.x.c"
+        fi
     fi
 done
 
