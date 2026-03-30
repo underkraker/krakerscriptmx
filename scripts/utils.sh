@@ -28,12 +28,12 @@ B_TOP="${GRAY}╔═════════════════════
 B_BOT="${GRAY}╚════════════════════════════════════════════════════════════════════════════════════════════════════╝${NC}"
 B_SEP="${GRAY}╟────────────────────────────────────────────────────────────────────────────────────────────────────╢${NC}"
 
-# ASCII Art Visual Branding Master (Minimalista Galáctico)
+# ASCII Art Visual Branding Master (Minimalista Galáctico Centrado)
 msg_banner() {
     clear
-    echo -e "${CYAN}🐲 K R A K E R   ${GREEN}M A S T E R   ${WHITE}P A N E L 🐲${NC}"
-    echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${GRAY}               [ ELITE EDITION - VERSION EXTREME ]${NC}"
+    echo -e "                   ${CYAN}🐲 K R A K E R   ${GREEN}M A S T E R   ${WHITE}P A N E L 🐲${NC}"
+    echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "                      ${GRAY}[ ELITE EDITION - VERSION EXTREME ]${NC}"
 }
 
 # Live Status Indicator
