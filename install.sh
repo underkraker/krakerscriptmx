@@ -40,29 +40,29 @@ sleep 1
 
 # 🛡️ MÓDULO DE VERIFICACIÓN (Bypass si ya existe)
 show_progress 1 "Validando Seguridad..." 25
-if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null || ! command -v shc &> /dev/null; then
+if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null; then
     apt-get update -y > /dev/null 2>&1
-    apt-get install -y curl jq wget git build-essential shc > /dev/null 2>&1
+    apt-get install -y curl jq wget git > /dev/null 2>&1
 fi
 
 TEMP_SHIELD="/tmp/KRAKER_Shield.sh"
 wget -qO "$TEMP_SHIELD" "https://raw.githubusercontent.com/underkraker/krakerscriptmx/main/scripts/KRAKER_Shield.sh"
 source "$TEMP_SHIELD"
-show_progress 1 "Autenticando Key..." 40
+show_progress 1 "Autenticando Key..." 45
 verify_license || { echo -e "\n${RED}[!] Error en la verificación.${NC}"; exit 1; }
 
 # Install Dependencies
-show_progress 1 "Instalando Componentes..." 60
+show_progress 1 "Instalando Componentes..." 65
 apt-get install -y ufw lsof openssl net-tools screen > /dev/null 2>&1
 
 # Clone Repository
-show_progress 1 "Descargando Panel..." 75
+show_progress 1 "Descargando Panel..." 85
 REPO_DIR="/root/kraker_master"
 [[ -d "$REPO_DIR" ]] && rm -rf "$REPO_DIR"
 git clone https://github.com/underkraker/krakerscriptmx.git "$REPO_DIR" > /dev/null 2>&1
 
 # Set Permissions
-show_progress 1 "Finalizando Configuración..." 98
+show_progress 1 "Configurando Scripts..." 95
 chmod +x "$REPO_DIR/menu.sh"
 chmod +x "$REPO_DIR/scripts"/*.sh
 ln -sf "$REPO_DIR/menu.sh" /usr/bin/kraker
