@@ -78,14 +78,31 @@ echo -e "${YELLOW}[*] Validando consistencia del Protocolo...${NC}"
 if /usr/local/bin/xray test -c /usr/local/etc/xray/config.json > /dev/null 2>&1; then
     echo -e "${GREEN}[✔] Protocolo Xray Reality Validado.${NC}"
 else
-    echo -e "${RED}[!] ERROR EN SNI BUG: Tu SNI no es válido para Reality.${NC}"
-    echo -e "${YELLOW}[*] Iniciando Auto-Reparación (Esto tomará 5 segundos)...${NC}"
-    sleep 5
-    # Auto-Reparación a Destino Seguro
-    jq '.inbounds[0].streamSettings.realitySettings.dest = "www.google.com:443" | .inbounds[0].streamSettings.realitySettings.serverNames = ["www.google.com"]' \
-        /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
-    mv /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/config.json
-    echo -e "${GREEN}[✔] Auto-Reparación Completada con Éxito (Destino: Google).${NC}"
+    echo -e "${RED}[!] ERROR CRÍTICO: Tu SNI Bug no es válido o faltan herramientas (JQ).${NC}"
+    echo -e "${YELLOW}[*] Iniciando AUTO-REPARACIÓN DE EMERGENCIA...${NC}"
+    echo -e "${YELLOW}[*] El sistema usará un destino seguro (google) para poder arrancar.${NC}"
+    sleep 8
+    
+    # Auto-Reparación SIN dependencias (Heredoc Directo)
+    cat > /usr/local/etc/xray/config.json <<EOF
+{
+    "log": {"loglevel": "warning"},
+    "inbounds": [{
+        "port": $PORT, "protocol": "vless", "tag": "REALITY_REPAIRED",
+        "settings": {"clients": [{"id": "$UUID", "flow": "xtls-rprx-vision"}], "decryption": "none"},
+        "streamSettings": {
+            "network": "tcp", "security": "reality",
+            "realitySettings": {
+                "show": false, "dest": "www.google.com:443", "xver": 0,
+                "serverNames": ["www.google.com"], "privateKey": "$PRIVATE_KEY", "shortIds": ["$SHORT_ID"]
+            }
+        },
+        "sniffing": {"enabled": true, "destOverride": ["http", "tls"]}
+    }],
+    "outbounds": [{"protocol": "freedom"}]
+}
+EOF
+    echo -e "${GREEN}[✔] Auto-Reparación Completada con Éxito.${NC}"
 fi
 
 # 4. Activación Maestro
