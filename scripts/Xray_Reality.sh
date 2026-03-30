@@ -10,7 +10,7 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 msg_header "XRAY REALITY SETUP"
 install_deps curl jq openssl coreutils ufw lsof
 
-# 2. Instalación Maestro Xray
+# 2. Maestro Xray y Verificación de Integridad
 install_xray() {
     msg_header "MASTER XRAY INSTALLER"
     if [[ ! -s /usr/local/bin/xray ]]; then
@@ -18,17 +18,17 @@ install_xray() {
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
     fi
     
-    # Verificación de Integridad
+    # Verificación de Binario
     if [[ -s /usr/local/bin/xray ]]; then
         echo -e "${GREEN}[✔] Binario Xray Verificado ($(ls -lh /usr/local/bin/xray | awk '{print $5}'))${NC}"
     else
-        echo -e "${RED}[!] Error: Binario no detectado. Reintentando con estático...${NC}"
+        echo -e "${RED}[!] Error: No se detectó el binario. Instalando estático...${NC}"
         wget -qO /usr/local/bin/xray "https://github.com/underkraker/xray-static/raw/main/xray"
         chmod +x /usr/local/bin/xray
     fi
 }
 
-# 3. Datos y Configuración UNIFICADA
+# 3. Datos y Configuración (Política de No-Interrupción)
 install_xray
 UUID=$(/usr/local/bin/xray uuid)
 KEYS=$(/usr/local/bin/xray x25519)
@@ -40,13 +40,14 @@ IP_PUB=$(get_ip)
 read -p "Ingresa el SNI Bug para REALITY: " BUG
 [[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
+# Port Safe Selection (No interrumpir 443)
 PORT=443
-if lsof -Pi :443 -sTCP:LISTEN -t >/dev/null ; then
+if ss -ntlp | grep -q ":443 "; then
     PORT=4433
-    echo -e "${YELLOW}Aviso: Puerto 443 ocupado. Usando: $PORT${NC}"
+    echo -e "${YELLOW}[!] Puerto 443 OCUPADO. Usando Puerto Alternativo: $PORT${NC}"
 fi
 
-# Crear Configuración Base (Master)
+# Generar Configuración Base
 mkdir -p /usr/local/etc/xray
 cat > /usr/local/etc/xray/config.json <<EOF
 {
@@ -67,6 +68,16 @@ cat > /usr/local/etc/xray/config.json <<EOF
 }
 EOF
 
+# Validar Configuración antes de iniciar
+echo -e "${YELLOW}[*] Probando integridad del Código JSON...${NC}"
+if /usr/local/bin/xray test -c /usr/local/etc/xray/config.json > /dev/null 2>&1; then
+    echo -e "${GREEN}[✔] Código JSON Válido y Perfecto.${NC}"
+else
+    echo -e "${RED}[!] Error en el JSON. Usando destino de respaldo (google)...${NC}"
+    sed -i "s/\"dest\": \"$BUG:443\"/\"dest\": \"www.google.com:443\"/" /usr/local/etc/xray/config.json
+    sed -i "s/\"serverNames\": \[\"$BUG\"\]/\"serverNames\": \[\"www.google.com\"\]/" /usr/local/etc/xray/config.json
+fi
+
 # 4. Activación Maestro
 systemctl daemon-reload
 systemctl enable xray > /dev/null 2>&1
@@ -76,12 +87,12 @@ ufw allow $PORT/tcp > /dev/null 2>&1
 if systemctl is-active --quiet xray; then
     echo -e "${GREEN}[✔] SERVICIO XRAY CORRIENDO EN PUERTO $PORT${NC}"
 else
-    echo -e "${RED}[!] Error: El servicio no pudo iniciar. Revisa 'journalctl -u xray'${NC}"
+    echo -e "${RED}[!] Error Fatal: El servicio no inició. Revisa 'journalctl -u xray'${NC}"
 fi
 
 LINK="vless://$UUID@$IP_PUB:$PORT?security=reality&sni=$BUG&fp=chrome&pbk=$PUBLIC_KEY&sid=$SHORT_ID&type=tcp&flow=xtls-rprx-vision#KRAKER_REALITY"
 
 msg_header "REALITY INSTALACIÓN COMPLETADA"
-echo -e "${GREEN}✔ KRAKER REALITY ACTIVADO!${NC}"
+echo -e "${GREEN}✔ KRAKER REALITY REPARADO Y ACTIVADO!${NC}"
 echo -e "${YELLOW}Enlace :${NC} $LINK"
 echo -e "${BARRA}"
