@@ -43,7 +43,8 @@ main_menu() {
     echo -e "  ${YELLOW}[05]${NC} ${WHITE}VMESS (XRAY)${NC}               ${YELLOW}[10]${NC} ${WHITE}DROPBEAR MANAGER${NC}"
     echo -e "${BARRA}"
     echo -e "  ${YELLOW}[11]${NC} ${WHITE}MANTENIMIENTO Y SISTEMA${NC}    ${YELLOW}[12]${NC} ${WHITE}GESTIÓN DE USUARIOS${NC}"
-    echo -e "  ${YELLOW}[13]${NC} ${WHITE}TEST DE VELOCIDAD${NC}          ${YELLOW}[00]${NC} ${RED}SALIR DEL MENU${NC}"
+    echo -e "  ${YELLOW}[13]${NC} ${WHITE}TEST DE VELOCIDAD${NC}          ${YELLOW}[14]${NC} ${MAGENTA}GESTOR DE SERVICIOS${NC}"
+    echo -e "  ${YELLOW}[00]${NC} ${RED}SALIR DEL MENU${NC}"
     echo -e "${BARRA}"
     echo -en "  ${CYAN}SELECCIONE UNA OPCIÓN: ${NC}"
     read opt
@@ -68,6 +69,9 @@ main_menu() {
             echo -e "${YELLOW}Ejecutando Test de Velocidad...${NC}"
             install_deps speedtest-cli
             speedtest-cli
+            ;;
+        14)
+            bash "$SOURCE_DIR/scripts/KRAKER_Services.sh"
             ;;
         0|00) 
             clear
