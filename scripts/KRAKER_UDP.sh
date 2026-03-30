@@ -16,46 +16,58 @@ tune_network() {
     sysctl -p > /dev/null 2>&1
 }
 
-# 2. Instalación BadVPN (Compilación Profesional v2)
+# 2. Instalación BadVPN (MODO EXPERTO - ULTRA ROBUSTO)
 install_badvpn() {
     msg_header "INSTALANDO BADVPN UDPGW"
-    if [[ -f /usr/bin/badvpn-udpgw ]]; then
-        echo -e "${GREEN}[✔] BadVPN ya está instalado.${NC}"
+    
+    # Limpieza de instalaciones fallidas (archivos de 0 bytes)
+    if [[ -f /usr/bin/badvpn-udpgw && ! -s /usr/bin/badvpn-udpgw ]]; then
+        echo -e "${YELLOW}[!] Detectado binario corrupto (0 bytes). Limpiando...${NC}"
+        rm -f /usr/bin/badvpn-udpgw
+    fi
+
+    if [[ -s /usr/bin/badvpn-udpgw ]]; then
+        echo -e "${GREEN}[✔] BadVPN ya está instalado y verificado.${NC}"
         return
     fi
 
-    echo -e "${YELLOW}[*] Preparando dependencias Ubuntu 24.04...${NC}"
-    apt update -y > /dev/null 2>&1
-    apt install -y cmake build-essential wget tar libssl-dev pkg-config > /dev/null 2>&1
+    echo -e "${YELLOW}[*] Instalando dependencias necesarias...${NC}"
+    apt update -y
+    apt install -y cmake build-essential wget tar libssl-dev pkg-config
 
-    echo -e "${YELLOW}[*] Descargando y compilando desde código fuente (Parcheado)...${NC}"
+    echo -e "${YELLOW}[*] Intentando Compilación Directa (Garantiza Compatibilidad)...${NC}"
     rm -rf /tmp/badvpn-1.999.130
     cd /tmp
-    wget https://github.com/ambrop72/badvpn/archive/1.999.130.tar.gz > /dev/null 2>&1
-    tar xvzf 1.999.130.tar.gz > /dev/null 2>&1
-    cd badvpn-1.999.130
-    mkdir build && cd build
+    if wget https://github.com/ambrop72/badvpn/archive/1.999.130.tar.gz; then
+        tar xvzf 1.999.130.tar.gz
+        cd badvpn-1.999.130
+        mkdir build && cd build
+        # Parche de compatibilidad extrema para Ubuntu 24.04
+        cmake .. -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_UDPGW=1 \
+                 -DCMAKE_C_FLAGS="-Wno-error" -DCMAKE_CXX_FLAGS="-Wno-error"
+        make install
+        
+        if [[ -s /usr/local/bin/badvpn-udpgw ]]; then
+            ln -sf /usr/local/bin/badvpn-udpgw /usr/bin/badvpn-udpgw
+            echo -e "${GREEN}[✔] BadVPN compilado con éxito.${NC}"
+            return
+        fi
+    fi
+
+    echo -e "${RED}[!] Falló la compilación. Usando Binario Estático de Emergencia...${NC}"
+    # Fuente de alta disponibilidad para binarios estáticos
+    wget -O /usr/bin/badvpn-udpgw "https://github.com/itxtutor/badvpn/raw/master/badvpn-udpgw-x86_64"
+    chmod +x /usr/bin/badvpn-udpgw
     
-    # Parche: -Wno-error para evitar fallos de compilación en Ubuntu 24.04
-    cmake .. -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_UDPGW=1 \
-             -DCMAKE_C_FLAGS="-Wno-error" -DCMAKE_CXX_FLAGS="-Wno-error" > /dev/null 2>&1
-    
-    make install > /dev/null 2>&1
-    
-    if [[ -f /usr/local/bin/badvpn-udpgw ]]; then
-        ln -sf /usr/local/bin/badvpn-udpgw /usr/bin/badvpn-udpgw
-        echo -e "${GREEN}[✔] BadVPN compilado con éxito.${NC}"
-    else
-        echo -e "${RED}[!] Error grave en la compilación. Usando binario estático de emergencia...${NC}"
-        wget -q -O /usr/bin/badvpn-udpgw "https://github.com/itxtutor/badvpn/raw/master/badvpn-udpgw-x86_64"
-        chmod +x /usr/bin/badvpn-udpgw
+    if [[ ! -s /usr/bin/badvpn-udpgw ]]; then
+        echo -e "${RED}[!!!] ERROR CRÍTICO: No se pudo obtener un binario válido.${NC}"
+        exit 1
     fi
 }
 
-# 3. Servicio Systemd Elite v2
+# 3. Servicio Systemd Elite v3 (Auditado)
 create_service() {
-    msg_header "CONFIGURACIÓN DE SERVICIO UDP"
-    echo -e "${YELLOW}[*] Creando KRAKER UDP Service...${NC}"
+    msg_header "ACTIVANDO SERVICIO UDP MASTER"
     cat << 'EOF' > /etc/systemd/system/kraker-udp.service
 [Unit]
 Description=KRAKER MASTER - UDP Gateway
@@ -78,8 +90,8 @@ CPUSchedulingPriority=99
 WantedBy=multi-user.target
 EOF
     systemctl daemon-reload
-    systemctl enable kraker-udp > /dev/null 2>&1
-    systemctl restart kraker-udp > /dev/null 2>&1
+    systemctl enable kraker-udp
+    systemctl restart kraker-udp
 
     # Verificación Crítica
     sleep 3
