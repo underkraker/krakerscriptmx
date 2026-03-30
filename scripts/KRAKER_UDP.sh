@@ -6,14 +6,29 @@
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
-# 1. Optimización Kernel BBR
+# 1. Optimización Kernel Turbo Gaming
 tune_network() {
-    echo -e "${YELLOW}[1/3] Aplicando BBR y Tunings de Gaming...${NC}"
-    if ! sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"; then
-        echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-    fi
-    sysctl -p > /dev/null 2>&1
+    msg_header "CARGANDO MÓDULOS DE BAJA LATENCIA"
+    echo -e "${YELLOW}[*] Optimizando Stack de Red para Ping Mínimo...${NC}"
+    
+    cat << 'EOF' > /etc/sysctl.d/99-kraker-gaming.conf
+# Priorizar velocidad sobre rendimiento total
+net.ipv4.tcp_low_latency = 1
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_adv_win_scale = 1
+net.ipv4.tcp_fin_timeout = 15
+
+# Programador de paquetes para evitar Bufferbloat (Lag)
+net.core.default_qdisc = fq_codel
+
+# Buffers de red optimizados para Gaming UDP
+net.core.rmem_default = 524288
+net.core.rmem_max = 2097152
+net.core.wmem_default = 524288
+net.core.wmem_max = 2097152
+EOF
+    sysctl --system > /dev/null 2>&1
+    echo -e "${GREEN}[✔] Kernel Tuneado para Gaming v4.0 con éxito.${NC}"
 }
 
 # 2. Instalación BadVPN (MODO EXPERTO - ULTRA ROBUSTO)

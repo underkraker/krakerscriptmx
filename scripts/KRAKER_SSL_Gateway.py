@@ -60,14 +60,13 @@ def main(port, cert, key, target_addr, target_port):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certfile=cert, keyfile=key)
     
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    
     try:
         server.bind(('0.0.0.0', int(port)))
         server.listen(100)
+        # Optimización Turbo: Desactivar Algoritmo de Nagle
+        server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         secure_server = context.wrap_socket(server, server_side=True)
-        print(f"[*] KRAKER MASTER - Gateway v2.7 Activo en Puerto {port}")
+        print(f"[*] KRAKER MASTER - Gateway v4.5 [Turbo Gaming] Activo en Puerto {port}")
     except Exception as e:
         print(f"[!] Error: {e}")
         sys.exit(1)

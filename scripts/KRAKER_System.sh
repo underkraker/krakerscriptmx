@@ -69,13 +69,28 @@ manage_cron() {
 }
 
 backup_system() {
-    msg_header "COPIA DE SEGURIDAD (BACKUP)"
-    local date=$(date +%Y-%m-%d)
-    local file="/root/KRAKER_BACKUP_$date.tar.gz"
-    echo -e "${YELLOW}[*] Creando backup de usuarios y config...${NC}"
-    tar -czf "$file" /etc/kraker_users.db /usr/local/etc/xray/config.json /etc/default/dropbear /etc/ssh/sshd_config > /dev/null 2>&1
-    echo -e "${GREEN}[✔] Backup creado en: $file${NC}"
-    echo -e "${YELLOW}[!] Descarga este archivo para tener un respaldo seguro.${NC}"
+    msg_header "COPIA DE SEGURIDAD TOTAL (PRE-TURBO)"
+    local date=$(date +%Y-%m-%d_%H-%M)
+    local file="/root/KRAKER_FULL_BACKUP_$date.tar.gz"
+    
+    echo -e "${YELLOW}[*] Comprimiendo Base de Datos, Scripts y Servicios...${NC}"
+    # Incluir DB, Configs, Scripts del panel y las unidades de Systemd
+    tar -czf "$file" \
+        /etc/kraker_users.db \
+        /etc/kraker_domain \
+        /usr/local/etc/xray/config.json \
+        /etc/ws_ssl/server.crt \
+        /etc/ws_ssl/server.key \
+        $SOURCE_DIR \
+        /etc/systemd/system/kraker-* \
+        /etc/systemd/system/hysteria-server.service > /dev/null 2>&1
+        
+    if [[ -f "$file" ]]; then
+        echo -e "${GREEN}[✔] Backup Creado: $file${NC}"
+        echo -e "${YELLOW}[!] Este archivo contiene TODA tu configuración actual.${NC}"
+    else
+        echo -e "${RED}[!] Error al crear el backup. Revisa el espacio en disco.${NC}"
+    fi
     sleep 3
 }
 
