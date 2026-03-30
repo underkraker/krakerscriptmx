@@ -113,6 +113,14 @@ get_active_ports() {
             gaming+="$p "
         fi
     done
+
+    # Check Hysteria and other UDP Protocols
+    local udp_ports=""
+    for p in 443 36712 53 5300; do
+        ss -nulp | grep -q ":$p " && udp_ports+="$p "
+    done
+    
+    [[ ! -z $udp_ports ]] && ports+="${MAGENTA}[UDP:$udp_ports]${NC}"
     
     if [[ ! -z $gaming ]]; then
         # Remove duplicate space and add label

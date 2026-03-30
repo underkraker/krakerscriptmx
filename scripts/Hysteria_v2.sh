@@ -10,9 +10,16 @@ SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 msg_header "HYSTERIA v2 SETUP"
 install_deps curl openssl coreutils ufw lsof
 
-# 2. Hysteria Installation
+# 2. Hysteria Installation (Expert Mode)
 echo -e "${YELLOW}[*] Instalando Hysteria v2 core...${NC}"
-bash <(curl -fsSL https://get.hy2.biz) > /dev/null 2>&1
+if [[ ! -s /usr/local/bin/hysteria ]]; then
+    bash <(curl -fsSL https://get.hy2.biz) --check > /dev/null 2>&1
+fi
+
+if [[ ! -s /usr/local/bin/hysteria ]]; then
+    echo -e "${RED}[!] Error: No se pudo instalar Hysteria Core.${NC}"
+    exit 1
+fi
 
 # 3. Config & Certs
 read -p "Ingresa el SNI Bug para Hysteria: " BUG
