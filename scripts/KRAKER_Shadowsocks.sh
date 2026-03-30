@@ -6,29 +6,40 @@
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
-# 1. Configuración Interactiva
-msg_header "SHADOWSOCKS WS + TLS SETUP"
+# 1. Configuración Master de Shadowsocks
+msg_header "SHADOWSOCKS WS + TLS [MASTER SELECTOR]"
+echo -e "${YELLOW}[1] > ${WHITE}MODO AUTO (Usar IP del VPS para el Túnel)${NC}"
+echo -e "${YELLOW}[2] > ${WHITE}MODO DOMINIO (Usar tu propio Dominio)${NC}"
+echo -e "${BARRA}"
+read -p "Seleccione modo [1-2]: " SS_MODE
+
 install_deps curl jq openssl coreutils ufw lsof
+IP_PUB=$(get_ip)
 
-read -p "Introduce tu SNI Bug: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+if [[ "$SS_MODE" == "2" ]]; then
+    read -p "Ingresa tu Dominio: " BUG
+else
+    BUG=$IP_PUB
+fi
+[[ -z $BUG ]] && BUG=$IP_PUB
 
-read -p "Puerto para Shadowsocks [2087]: " PORT
-[[ -z $PORT ]] && PORT=2087
+# Puerto Detectado (Predeterminado 2096 - Puerto HTTPS Cloudflare)
+PORT=2096
+if ss -ntlp | grep -q ":2096 "; then
+    PORT=2083
+    echo -e "${YELLOW}[!] Puerto 2096 ocupado. Usando alternativo: $PORT${NC}"
+fi
+
+# 2. Certificados y Configuración
+echo -e "${YELLOW}[*] Generando certificados y configuración Shadowsocks para $BUG...${NC}"
+mkdir -p /etc/kraker_shadowsocks
+openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_shadowsocks/server.key -out /etc/kraker_shadowsocks/server.crt -subj "/CN=$BUG" -days 3650 2>/dev/null
 
 PASS=$(openssl rand -hex 12)
-IP=$(get_ip)
 
-# 2. Certificados y Directorios
-echo -e "${YELLOW}[*] Generando certificados...${NC}"
-mkdir -p /etc/kraker_shadowsocks
-openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_shadowsocks/server.key -out /etc/kraker_shadowsocks/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
-
-# 3. Integración con Xray (JQ)
-echo -e "${YELLOW}[*] Configurando Xray-core...${NC}"
 cat << EOM > /usr/local/etc/xray/temp_ss.json
 {
-    "port": $PORT, "protocol": "shadowsocks",
+    "port": $PORT, "protocol": "shadowsocks", "tag": "SS_INBOUND",
     "settings": {"method": "aes-256-gcm", "password": "$PASS"},
     "streamSettings": {
         "network": "ws", "security": "tls",
@@ -39,26 +50,29 @@ cat << EOM > /usr/local/etc/xray/temp_ss.json
 }
 EOM
 
-if [ -f /usr/local/etc/xray/config.json ]; then
-    jq --argjson new_inbound "$(cat /usr/local/etc/xray/temp_ss.json)" '.inbounds += [$new_inbound]' /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp && mv /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/config.json
-else
-    echo "{\"inbounds\": [$(cat /usr/local/etc/xray/temp_ss.json)], \"outbounds\": [{\"protocol\": \"freedom\"}]}" > /usr/local/etc/xray/config.json
+# Inyectar en Configuración Maestra con JQ
+if [ ! -f /usr/local/etc/xray/config.json ]; then
+    echo "{\"log\": {\"loglevel\": \"warning\"}, \"inbounds\": [], \"outbounds\": [{\"protocol\": \"freedom\"}]}" > /usr/local/etc/xray/config.json
 fi
 
-# 4. Finalización
-setup_motd
+jq 'del(.inbounds[] | select(.tag == "SS_INBOUND"))' /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
+jq --argjson new "$(cat /usr/local/etc/xray/temp_ss.json)" '.inbounds += [$new]' /usr/local/etc/xray/config.json.tmp > /usr/local/etc/xray/config.json
+rm /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/temp_ss.json
+
+# 3. Finalización y Reinicio
 ufw allow $PORT/tcp > /dev/null 2>&1
 systemctl restart xray > /dev/null 2>&1
-rm /usr/local/etc/xray/temp_ss.json
 
-# Enlace Shadowsocks
-SS_CORE="aes-256-gcm:$PASS@$IP:$PORT"
+# 4. Generar Enlace Shadowsocks
+SS_CORE="aes-256-gcm:$PASS@$IP_PUB:$PORT"
 ENCODED=$(echo -n "$SS_CORE" | base64 | tr -d '\n')
-LINK="ss://$ENCODED?plugin=v2ray-plugin%3Btls%3Bhost%3D$BUG%3Bpath%3D%2Fkrakervps#KRAKER_VPS_SHADOWSOCKS"
+LINK="ss://$ENCODED?plugin=v2ray-plugin%3Btls%3Bhost%3D$BUG%3Bpath%3D%2Fkrakervps#KRAKER_SHADOWSOCKS"
 
-msg_header "SHADOWSOCKS INSTALACIÓN COMPLETADA"
-echo -e "${GREEN}✔ KRAKER SHADOWSOCKS INSTALADO CON ÉXITO!${NC}"
-echo -e "${YELLOW}Enlace SS:${NC} $LINK"
-echo -e "${BARRA}"
-echo -e "Copia el enlace y asegura de permitir certificados inseguros en tu App."
+msg_header "SHADOWSOCKS INSTALADO CON ÉXITO"
+if systemctl is-active --quiet xray; then
+    echo -e "${GREEN}✔ KRAKER SHADOWSOCKS ACTIVO (PUERTO $PORT)${NC}"
+    echo -e "${YELLOW}Enlace SS:${NC} $LINK"
+else
+    echo -e "${RED}[!] Error: Xray no inició. Revisa logs.${NC}"
+fi
 echo -e "${BARRA}"
