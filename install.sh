@@ -61,33 +61,10 @@ REPO_DIR="/root/kraker_master"
 [[ -d "$REPO_DIR" ]] && rm -rf "$REPO_DIR"
 git clone https://github.com/underkraker/krakerscriptmx.git "$REPO_DIR" > /dev/null 2>&1
 
-# 🔐 CIFRADO DE SEGURIDAD (SHC)
-show_progress 1 "Cifrando Scripts (Anti-Copia)..." 90
-cd "$REPO_DIR"
-shc -v -r -f menu.sh -o menu_bin > /dev/null 2>&1
-mv menu_bin menu.sh
-rm -f menu.sh.x.c
-
-for script in scripts/*.sh; do
-    if [[ -f "$script" ]]; then
-        # EXCLUSIÓN CRÍTICA: utils.sh NUNCA se cifra ya que es fuente de funciones
-        if [[ "$script" == "scripts/utils.sh" ]]; then
-            continue
-        fi
-        
-        # Cifrar el resto
-        shc -v -r -f "$script" -o "${script}_bin" > /dev/null 2>&1
-        if [[ -f "${script}_bin" ]]; then
-            mv "${script}_bin" "$script"
-            rm -f "${script}.x.c"
-        fi
-    fi
-done
-
 # Set Permissions
 show_progress 1 "Finalizando Configuración..." 98
-chmod +x menu.sh
-chmod +x scripts/*
+chmod +x "$REPO_DIR/menu.sh"
+chmod +x "$REPO_DIR/scripts"/*.sh
 ln -sf "$REPO_DIR/menu.sh" /usr/bin/kraker
 ln -sf "$REPO_DIR/menu.sh" /usr/bin/menu
 chmod +x /usr/bin/kraker /usr/bin/menu
