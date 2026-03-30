@@ -1,6 +1,19 @@
-#!/bin/bash
-# KRAKER MASTER - LICENSE SHIELD (ESCRUTINIO DE ELITE) 🐲🛡️🚀
-# Versión 1.0 (Dynamic License Engine)
+# Colores de Respaldo
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+BARRA="${CYAN}======================================================${NC}"
+
+# Función Interna de Cabecera (Respaldo)
+msg_header() {
+    clear
+    echo -e "${BARRA}"
+    echo -e "${GREEN}    🐲 $1 🐲${NC}"
+    echo -e "${BARRA}"
+}
 
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh"
