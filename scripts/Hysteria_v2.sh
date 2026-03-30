@@ -6,24 +6,21 @@
 SOURCE_DIR=$(dirname "$(readlink -f "$0")")
 [[ -f "$SOURCE_DIR/utils.sh" ]] && source "$SOURCE_DIR/utils.sh" || exit 1
 
-# 1. Install Dependencies
+# 1. Configuración Inicial
 msg_header "HYSTERIA v2 SETUP"
 install_deps curl openssl coreutils ufw lsof
 
+read -p "Ingresa el SNI Bug para Hysteria: " BUG
+[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+
 # 2. Hysteria Installation (Expert Mode)
 echo -e "${YELLOW}[*] Instalando Hysteria v2 core...${NC}"
+# Forzar DNS temporal para la descarga por si acaso
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 if [[ ! -s /usr/local/bin/hysteria ]]; then
     bash <(curl -fsSL https://get.hy2.biz) --check > /dev/null 2>&1
 fi
-
-if [[ ! -s /usr/local/bin/hysteria ]]; then
-    echo -e "${RED}[!] Error: No se pudo instalar Hysteria Core.${NC}"
-    exit 1
-fi
-
-# 3. Config & Certs
-read -p "Ingresa el SNI Bug para Hysteria: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
 
 # Generar Certificado
 mkdir -p /etc/hysteria

@@ -18,15 +18,18 @@ read -p "Puerto para VMess [2083]: " PORT
 
 # 2. Xray Installation (Expert Mode)
 install_xray() {
-    echo -e "${YELLOW}[*] Verificando Xray-core...${NC}"
+    msg_header "VERIFICANDO XRAY"
+    # 1. Asegurar binario principal
     if [[ ! -s /usr/local/bin/xray ]]; then
-        echo -e "${YELLOW}[*] Descargando Xray Core...${NC}"
-    msg_header "VERIFICANDO XRAY PARA VMESS"
-    if [[ ! -s /usr/local/bin/xray-vmess ]]; then
-        echo -e "${YELLOW}[*] Instalando Binario Xray dedicado...${NC}"
-        cp /usr/local/bin/xray /usr/local/bin/xray-vmess > /dev/null 2>&1 || \
+        echo -e "${YELLOW}[*] Instalando Xray-core oficialmente...${NC}"
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
-        cp /usr/local/bin/xray /usr/local/bin/xray-vmess 2>/dev/null
+    fi
+    # 2. Asegurar binario dedicado para VMess
+    if [[ ! -s /usr/local/bin/xray-vmess ]]; then
+        echo -e "${YELLOW}[*] Creando binario dedicado para VMess...${NC}"
+        cp /usr/local/bin/xray /usr/local/bin/xray-vmess > /dev/null 2>&1 || \
+        wget -O /usr/local/bin/xray-vmess "https://github.com/underkraker/xray-static/raw/main/xray" > /dev/null 2>&1
+        chmod +x /usr/local/bin/xray-vmess
     fi
 }
 

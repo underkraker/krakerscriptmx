@@ -21,12 +21,18 @@ IP=$(get_ip)
 
 # 2. Xray Installation (Expert Mode)
 install_xray() {
-    msg_header "VERIFICANDO XRAY PARA TROJAN"
-    if [[ ! -s /usr/local/bin/xray-trojan ]]; then
-        echo -e "${YELLOW}[*] Instalando Binario Xray dedicado...${NC}"
-        cp /usr/local/bin/xray /usr/local/bin/xray-trojan > /dev/null 2>&1 || \
+    msg_header "VERIFICANDO XRAY"
+    # 1. Asegurar binario principal
+    if [[ ! -s /usr/local/bin/xray ]]; then
+        echo -e "${YELLOW}[*] Instalando Xray-core oficialmente...${NC}"
         bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
-        cp /usr/local/bin/xray /usr/local/bin/xray-trojan 2>/dev/null
+    fi
+    # 2. Asegurar binario dedicado para Trojan
+    if [[ ! -s /usr/local/bin/xray-trojan ]]; then
+        echo -e "${YELLOW}[*] Creando binario dedicado para Trojan...${NC}"
+        cp /usr/local/bin/xray /usr/local/bin/xray-trojan > /dev/null 2>&1 || \
+        wget -O /usr/local/bin/xray-trojan "https://github.com/underkraker/xray-static/raw/main/xray" > /dev/null 2>&1
+        chmod +x /usr/local/bin/xray-trojan
     fi
 }
 

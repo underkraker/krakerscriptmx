@@ -27,7 +27,12 @@ generate_keys() {
 
 # 3. Configurar Firewall
 setup_network() {
-    echo -e "${YELLOW}[3/4] Configurando Puerto 53 UDP (SlowDNS)...${NC}"
+    msg_header "CONFIGURANDO PUERTO 53 UDP"
+    # Asegurar DNS para que la VPS no se quede "ciega" tras apagar systemd-resolved
+    echo -e "${YELLOW}[*] Asegurando conectividad DNS (8.8.8.8)...${NC}"
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+    
     systemctl stop systemd-resolved > /dev/null 2>&1
     systemctl disable systemd-resolved > /dev/null 2>&1
     iptables -I INPUT -p udp --dport 53 -j ACCEPT
