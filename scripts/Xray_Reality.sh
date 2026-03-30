@@ -37,14 +37,20 @@ PUBLIC_KEY=$(echo "$KEYS" | awk -F': ' '/PublicKey/ || /Public key/ {print $2}' 
 SHORT_ID=$(head /dev/urandom | tr -dc 'a-f0-9' | head -c 8)
 IP_PUB=$(get_ip)
 
-read -p "Ingresa el SNI Bug para REALITY: " BUG
-[[ -z $BUG ]] && BUG="cdn-global.configcat.com"
+# Automatización Master: Selección de SNI de Alta Fidelidad
+echo -e "${YELLOW}[*] Seleccionando SNI Blindado automáticamente...${NC}"
+BUG="www.google.com"
+echo -e "${GREEN}[✔] SNI Seleccionado: $BUG (Google)${NC}"
 
-# Port Safe Selection (No interrumpir 443)
+# Port Safe Selection (No interrumpir 443 si está en uso)
 PORT=443
 if ss -ntlp | grep -q ":443 "; then
     PORT=4433
-    echo -e "${YELLOW}[!] Puerto 443 OCUPADO. Usando Puerto Alternativo: $PORT${NC}"
+    echo -e "${YELLOW}[!] Puerto 443 en uso por otro servicio. Usando alternativo: $PORT${NC}"
+fi
+if ss -ntlp | grep -q ":$PORT "; then
+    PORT=2083 # Puerto HTTPS Cloudflare común
+    echo -e "${YELLOW}[!] Re-intentando puerto: $PORT${NC}"
 fi
 
 # Generar Configuración Base (Usando JQ para Inmunidad Vital)
