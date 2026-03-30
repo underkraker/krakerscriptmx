@@ -19,10 +19,10 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Install Git
-echo -e "${YELLOW}[*] Verificando Git...${NC}"
+# Install Dependencies (Essential Pack)
+echo -e "${YELLOW}[*] Verificando dependencias críticas (Git, Curl, JQ, Wget)...${NC}"
 apt update -y > /dev/null 2>&1
-apt install -y git curl > /dev/null 2>&1
+apt install -y git curl jq wget ufw lsof openssl net-tools screen > /dev/null 2>&1
 
 # Clone Repository
 echo -e "${YELLOW}[*] Descargando Panel...${NC}"
