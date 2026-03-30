@@ -23,9 +23,8 @@ verify_license() {
     echo -e "  ${WHITE}🛡️ PROTECCIÓN ACTIVA - MAESTRO UNDERKRAKER${NC}"
     echo -e "${BARRA}"
     
-    # 📝 1. Pedir Dominio de Licencia (DuckDNS)
-    read -p "🦆 Ingrese su Dominio de Licencias DuckDNS: " LICENSE_DOMAIN
-    [[ -z "$LICENSE_DOMAIN" ]] && { echo -e "${RED}[!] Dominio Inválido.${NC}"; exit 1; }
+    # 📝 1. Dominio Maestro Oculto
+    LICENSE_DOMAIN="krakermaster.duckdns.org"
     
     # 📝 2. Pedir Key de Instalación
     echo -e -n "  ${YELLOW}🗝️ INGRESE SU KEY DE INSTALACIÓN: ${NC}"
@@ -37,7 +36,7 @@ verify_license() {
     fi
     
     # 🌐 3. Validar con el Bot (Detección Automática de IP)
-    echo -e "  ${CYAN}[*] Conectando con el Servidor Central ($LICENSE_DOMAIN)...${NC}"
+    echo -e "  ${CYAN}[*] Conectando con el Servidor Central...${NC}"
     
     # Soporta tanto el subdominio limpio como la URL completa
     [[ "$LICENSE_DOMAIN" != *".duckdns.org"* ]] && LICENSE_DOMAIN="$LICENSE_DOMAIN.duckdns.org"

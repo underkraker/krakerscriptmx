@@ -5,10 +5,22 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# 📊 Función de Barra de Carga
+show_progress() {
+    local duration=$1
+    local message=$2
+    local percent=$3
+    local bar_size=20
+    local filled_size=$(( percent * bar_size / 100 ))
+    local empty_size=$(( bar_size - filled_size ))
+    
+    printf "\r  ${CYAN}[${NC}"
+    printf "%${filled_size}s" | tr ' ' '#'
+    printf "%${empty_size}s" | tr ' ' ' '
+    printf "${CYAN}]${NC} ${percent}%% - ${YELLOW}${message}${NC}"
+}
 
-# 🛠️ Entorno No Interactivo para Ubuntu 22.04+
+# 🛠️ Entorno No Interactivo
 export DEBIAN_FRONTEND=noninteractive
 
 clear
@@ -22,35 +34,40 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# 🛡️ MÓDULO DE VERIFICACIÓN MAESTRA (KRAKER SHIELD)
-echo -e "${YELLOW}[*] Validando entorno de seguridad...${NC}"
-apt-get update -y > /dev/null 2>&1
-apt-get install -y curl jq wget git build-essential shc > /dev/null 2>&1
+# 🚀 INICIO DE PROCESO
+show_progress 1 "Inicializando sistema..." 10
+sleep 1
+
+# 🛡️ MÓDULO DE VERIFICACIÓN (Bypass si ya existe)
+show_progress 1 "Validando Seguridad..." 25
+if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null || ! command -v shc &> /dev/null; then
+    apt-get update -y > /dev/null 2>&1
+    apt-get install -y curl jq wget git build-essential shc > /dev/null 2>&1
+fi
 
 TEMP_SHIELD="/tmp/KRAKER_Shield.sh"
 wget -qO "$TEMP_SHIELD" "https://raw.githubusercontent.com/underkraker/krakerscriptmx/main/scripts/KRAKER_Shield.sh"
 source "$TEMP_SHIELD"
-verify_license || { echo -e "${RED}[!] Error en la verificación.${NC}"; exit 1; }
+show_progress 1 "Autenticando Key..." 40
+verify_license || { echo -e "\n${RED}[!] Error en la verificación.${NC}"; exit 1; }
 
-# Install Dependencies (Essential Pack)
-echo -e "${YELLOW}[*] Instalando dependencias críticas...${NC}"
+# Install Dependencies
+show_progress 1 "Instalando Componentes..." 60
 apt-get install -y ufw lsof openssl net-tools screen > /dev/null 2>&1
 
 # Clone Repository
-echo -e "${YELLOW}[*] Descargando Panel...${NC}"
+show_progress 1 "Descargando Panel..." 75
 REPO_DIR="/root/kraker_master"
 [[ -d "$REPO_DIR" ]] && rm -rf "$REPO_DIR"
 git clone https://github.com/underkraker/krakerscriptmx.git "$REPO_DIR" > /dev/null 2>&1
 
 # 🔐 CIFRADO DE SEGURIDAD (SHC)
-echo -e "${CYAN}[*] Protegiendo código fuente (Cifrado SHC)...${NC}"
+show_progress 1 "Cifrando Scripts (Anti-Copia)..." 90
 cd "$REPO_DIR"
-# Compilar Menu Principal
 shc -v -r -f menu.sh -o menu_bin > /dev/null 2>&1
 mv menu_bin menu.sh
 rm -f menu.sh.x.c
 
-# Compilar todos los scripts internos
 for script in scripts/*.sh; do
     if [[ -f "$script" ]]; then
         shc -v -r -f "$script" -o "${script}_bin" > /dev/null 2>&1
@@ -60,22 +77,19 @@ for script in scripts/*.sh; do
 done
 
 # Set Permissions
-echo -e "${YELLOW}[*] Configurando permisos y Banner Global...${NC}"
+show_progress 1 "Finalizando Configuración..." 98
 chmod +x menu.sh
 chmod +x scripts/*
-source "$REPO_DIR/scripts/utils.sh" > /dev/null 2>&1 || true
-setup_motd > /dev/null 2>&1 || true
-
-# Create Shortcuts
-echo -e "${YELLOW}[*] Creando accesos directos 'kraker' y 'menu'...${NC}"
 ln -sf "$REPO_DIR/menu.sh" /usr/bin/kraker
 ln -sf "$REPO_DIR/menu.sh" /usr/bin/menu
 chmod +x /usr/bin/kraker /usr/bin/menu
 
-echo -e "${CYAN}======================================================${NC}"
-echo -e "${GREEN}✔ INSTALACIÓN COMPLETADA Y CIFRADA CON ÉXITO!${NC}"
-echo -e "${YELLOW}Escribe 'kraker' o 'menu' para abrir el panel protegido.${NC}"
+# 🏁 FIN
+show_progress 1 "¡LISTO!" 100
+echo -e "\n${CYAN}======================================================${NC}"
+echo -e "${GREEN}✔ INSTALACIÓN COMPLETADA EXITOSAMENTE${NC}"
+echo -e "${YELLOW}Escribe 'kraker' o 'menu' para abrir el panel.${NC}"
 echo -e "${CYAN}======================================================${NC}"
 
-sleep 2
+sleep 1
 kraker
