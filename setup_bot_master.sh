@@ -65,6 +65,8 @@ screen -dmS master_bot python3 "$BOT_DIR/bot.py"
 
 # Fin del Proceso
 echo -e "\n${GREEN}✔ BOT DESPLEGADO CON ÉXITO!${NC}"
-echo -e "${WHITE}Dominio Activo: ${CYAN}http://$DUCK_DOMAIN.duckdns.org:5000${NC}"
+# Limpiar el dominio para evitar duplicar .duckdns.org si el usuario lo ingresó completo
+DOMAIN_CLEAN=$(echo "$DUCK_DOMAIN" | sed 's/\.duckdns\.org//g')
+echo -e "${WHITE}Dominio Activo: ${CYAN}http://$DOMAIN_CLEAN.duckdns.org:5000${NC}"
 echo -e "${WHITE}Comando para ver el Bot: ${YELLOW}screen -r master_bot${NC}"
 echo -e "${CYAN}======================================================${NC}"
