@@ -36,9 +36,12 @@ sys_stats() {
     echo -e "${BARRA}"
 }
 
-# Manejo de Argumentos (Para limpieza automática)
-if [[ "$1" == "--clean" ]]; then
+# Manejo de Argumentos (Auto-Mantenimiento Master)
+if [[ "$1" == "--ram-clean" ]]; then
     clean_vps_ram
+    exit 0
+elif [[ "$1" == "--cpu-clean" ]]; then
+    purge_ghost_sessions
     exit 0
 fi
 

@@ -120,10 +120,23 @@ clean_vps_ram() {
     rm -rf /tmp/*.log /tmp/*.tmp 2>/dev/null
 }
 
+purge_ghost_sessions() {
+    # 🏁 PURGADO DE SESIONES FANTASMA (LIBERAR CPU)
+    # Matar procesos de protocolos que no tienen usuarios reales (sockets muertos)
+    systemctl restart dropbear > /dev/null 2>&1
+    systemctl restart stunnel4 > /dev/null 2>&1
+    # Liberar RAM en cascada
+    clean_vps_ram
+}
+
 setup_auto_clean() {
-    # Programar limpieza cada 2 horas si no existe ya
+    # Programar Limpieza RAM cada 2 Horas
     if ! crontab -l | grep -q "clean_vps_ram"; then
-        (crontab -l 2>/dev/null; echo "0 */2 * * * /usr/bin/kraker --clean > /dev/null 2>&1") | crontab -
+        (crontab -l 2>/dev/null; echo "0 */2 * * * /usr/bin/kraker --ram-clean > /dev/null 2>&1") | crontab -
+    fi
+    # Programar Purgado Sesiones Fantasma (CPU) cada 30 Minutos para bajar del 500%
+    if ! crontab -l | grep -q "purge_ghost_sessions"; then
+        (crontab -l 2>/dev/null; echo "*/30 * * * * /usr/bin/kraker --cpu-clean > /dev/null 2>&1") | crontab -
     fi
 }
 
