@@ -54,13 +54,14 @@ if [[ "$MODE" == "2" ]]; then
 EOF
     LINK="vless://$UUID@$IP_PUB:443?security=tls&sni=$DOMAIN&type=tcp#KRAKER_VLESS_TLS"
 else
-    # MODO REALITY (Auto-Google)
+    # MODO REALITY (UNIVERSAL SNI BUG)
+    # En este modo, el servidor acepta cualquier Host que el cliente le mande
+    BUG="www.google.com"
+    
     KEYS=$(/usr/local/bin/xray x25519)
-    # Extracción de llaves con GREP (Blindaje Master)
     PRIVATE_KEY=$(echo "$KEYS" | grep -i "Private" | awk '{print $NF}' | tr -d ' ')
     PUBLIC_KEY=$(echo "$KEYS" | grep -i "Public" | awk '{print $NF}' | tr -d ' ')
     SHORT_ID=$(head /dev/urandom | tr -dc 'a-f0-9' | head -c 8)
-    BUG="www.google.com"
 
     cat > /usr/local/etc/xray/conf.d/reality.json <<EOF
 {
@@ -71,15 +72,22 @@ else
             "network": "tcp", "security": "reality",
             "realitySettings": {
                 "show": false, "dest": "$BUG:443", "xver": 0,
-                "serverNames": ["$BUG"], "privateKey": "$PRIVATE_KEY", "shortIds": ["$SHORT_ID"]
+                "serverNames": ["$BUG", "www.microsoft.com", "www.netflix.com"], 
+                "privateKey": "$PRIVATE_KEY", "shortIds": ["$SHORT_ID"]
             }
         },
-        "sniffing": {"enabled": true, "destOverride": ["http", "tls"]}
+        "sniffing": {
+            "enabled": true, 
+            "destOverride": ["http", "tls"],
+            "routeOnly": false
+        }
     }]
 }
 EOF
-    LINK="vless://$UUID@$IP_PUB:443?security=reality&sni=$BUG&fp=chrome&pbk=$PUBLIC_KEY&sid=$SHORT_ID&type=tcp&flow=xtls-rprx-vision#KRAKER_REALITY"
+    LINK="vless://$UUID@$IP_PUB:443?security=reality&sni=$BUG&fp=chrome&pbk=$PUBLIC_KEY&sid=$SHORT_ID&type=tcp&flow=xtls-rprx-vision#KRAKER_MASTER_REALITY"
 fi
+
+
 
 # 4. Activación Maestro
 systemctl restart xray > /dev/null 2>&1

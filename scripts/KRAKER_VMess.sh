@@ -50,6 +50,11 @@ cat << EOM > /usr/local/etc/xray/conf.d/vmess.json
             "network": "ws", "security": "tls",
             "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
             "wsSettings": { "path": "/krakervps" }
+        },
+        "sniffing": {
+            "enabled": true,
+            "destOverride": ["http", "tls"],
+            "routeOnly": false
         }
     }]
 }
