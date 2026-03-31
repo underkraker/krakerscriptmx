@@ -31,48 +31,31 @@ if ss -ntlp | grep -q ":2083 "; then
 fi
 
 # 2. Xray Core Integrity (Master Check)
-install_xray() {
-    msg_header "VERIFICANDO NÚCLEO XRAY"
-    if [[ ! -s /usr/local/bin/xray ]]; then
-        echo -e "${YELLOW}[*] Instalando Xray-core oficialmente...${NC}"
-        bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
-    fi
-}
+install_xray_modular
 
 # 3. Datos y Configuración
-install_xray
 UUID=$(/usr/local/bin/xray uuid)
 
 echo -e "${YELLOW}[*] Generando certificados y configuración VMess para $BUG...${NC}"
 mkdir -p /etc/kraker_vmess
 openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/kraker_vmess/server.key -out /etc/kraker_vmess/server.crt -subj "/CN=$BUG" -days 3650 2>/dev/null
 
-# Limpiar puertos en conflicto (Si es puerto 443, pero aquí usamos 2083/8443)
-# No necesitamos parar servicios si el puerto está libre.
-
-cat << EOM > /usr/local/etc/xray/vmess_inbound.json
+# Configuración Modular VMess
+cat << EOM > /usr/local/etc/xray/conf.d/vmess.json
 {
-    "port": $PORT, "protocol": "vmess", "tag": "VMESS_INBOUND",
-    "settings": {"clients": [{"id": "$UUID", "alterId": 0}]},
-    "streamSettings": {
-        "network": "ws", "security": "tls",
-        "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
-        "wsSettings": { "path": "/krakervps" }
-    }
+    "inbounds": [{
+        "port": $PORT, "protocol": "vmess", "tag": "VMESS_INBOUND",
+        "settings": {"clients": [{"id": "$UUID", "alterId": 0}]},
+        "streamSettings": {
+            "network": "ws", "security": "tls",
+            "tlsSettings": {"certificates": [{"certificateFile": "/etc/kraker_vmess/server.crt", "keyFile": "/etc/kraker_vmess/server.key"}]},
+            "wsSettings": { "path": "/krakervps" }
+        }
+    }]
 }
 EOM
 
-# Inyectar en Configuración Maestra con JQ
-if [ ! -f /usr/local/etc/xray/config.json ]; then
-    echo "{\"log\": {\"loglevel\": \"warning\"}, \"inbounds\": [], \"outbounds\": [{\"protocol\": \"freedom\"}]}" > /usr/local/etc/xray/config.json
-fi
-
-jq 'del(.inbounds[] | select(.tag == "VMESS_INBOUND"))' /usr/local/etc/xray/config.json > /usr/local/etc/xray/config.json.tmp
-jq --argjson new "$(cat /usr/local/etc/xray/vmess_inbound.json)" '.inbounds += [$new]' /usr/local/etc/xray/config.json.tmp > /usr/local/etc/xray/config.json
-rm /usr/local/etc/xray/config.json.tmp /usr/local/etc/xray/vmess_inbound.json
-
 # 4. Activación y Verificación
-systemctl daemon-reload
 systemctl restart xray > /dev/null 2>&1
 ufw allow $PORT/tcp > /dev/null 2>&1
 

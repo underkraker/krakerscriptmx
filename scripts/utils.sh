@@ -194,6 +194,48 @@ EOF
     fi
 }
 
+# Módulo de Xray Modular 🛡️🐲🚀
+install_xray_modular() {
+    # 🕵️ Asegurar que el núcleo oficial esté instalado
+    if [[ ! -s /usr/local/bin/xray ]]; then
+        bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
+    fi
+    
+    # Crear Estructura de Carpetas Élite
+    mkdir -p /usr/local/etc/xray/conf.d/
+    
+    # 🏁 Crear el Servicio Maestro de Xray (Carga todo el directorio)
+    cat << EOF > /etc/systemd/system/xray.service
+[Unit]
+Description=KRAKER MASTER - Xray Modular Service
+After=network.target nss-lookup.target
+
+[Service]
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/local/bin/xray run -confdir /usr/local/etc/xray/conf.d/
+Restart=always
+RestartSec=3s
+LimitNOFILE=1000000
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Crear el outbound por defecto (Freedom) para que los inbounds funcionen
+    cat << EOF > /usr/local/etc/xray/conf.d/00_outbounds.json
+{
+    "log": {"loglevel": "warning"},
+    "outbounds": [{"protocol": "freedom", "tag": "direct"}]
+}
+EOF
+
+    systemctl daemon-reload
+    systemctl enable xray > /dev/null 2>&1
+}
+
 update_client_message() {
     msg_header "PERSONALIZAR BANNER DE CLIENTE"
     echo -e "  ${YELLOW}Sugerencia: Usa negritas o emojis para que resalte.${NC}"
