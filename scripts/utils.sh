@@ -111,6 +111,30 @@ EOF
     systemctl restart sshd > /dev/null 2>&1
 }
 
+# Módulo de Limpieza Master ♻️🚀
+clean_vps_ram() {
+    # Liberar Caches del Kernel Linux
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+    # Limpiar Archivos Temporales Antiguos
+    rm -rf /tmp/*.log /tmp/*.tmp 2>/dev/null
+}
+
+setup_auto_clean() {
+    # Programar limpieza cada 2 horas si no existe ya
+    if ! crontab -l | grep -q "clean_vps_ram"; then
+        (crontab -l 2>/dev/null; echo "0 */2 * * * /usr/bin/kraker --clean > /dev/null 2>&1") | crontab -
+    fi
+}
+
+get_active_users() {
+    # Contar usuarios reales por SSH y SSL
+    local ssh_users=$(who | wc -l)
+    # Contar sesiones SSL Establecidas (PDirect / Python)
+    local ssl_users=$(ss -ant | grep -E ":(443|80|442|8080) " | grep "ESTAB" | wc -l)
+    echo -e "${GREEN}$((ssh_users + ssl_users))${NC}"
+}
+
 get_active_ports() {
     local tcp_show=""
     local udp_show=""
@@ -127,3 +151,4 @@ get_active_ports() {
     [[ ! -z $udp_show ]] && output+="${MAGENTA}UDP:${NC} $udp_show "
     echo -e "${output:-NINGUNO}"
 }
+

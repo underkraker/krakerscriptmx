@@ -36,6 +36,12 @@ sys_stats() {
     echo -e "${BARRA}"
 }
 
+# Manejo de Argumentos (Para limpieza automática)
+if [[ "$1" == "--clean" ]]; then
+    clean_vps_ram
+    exit 0
+fi
+
 # Menu Principal
 main_menu() {
     msg_banner
@@ -46,9 +52,10 @@ main_menu() {
     RAM_TOTAL=$(free -m | awk '/Mem:/ { print $2 }')
     RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
     RAM_PERC=$(( RAM_USED * 100 / RAM_TOTAL ))
+    USERS=$(get_active_users)
 
     echo -e "${B_TOP}"
-    echo -e "  ${WHITE}SISTEMA: ${GREEN}$OS${NC}"
+    echo -e "  ${WHITE}SISTEMA: ${GREEN}$OS${NC}   ${WHITE}USERS: ${GREEN}$USERS${NC}"
     echo -e "  ${WHITE}IP PUB : ${CYAN}$IP_EXT${NC}   ${WHITE}UPTIME: ${GREEN}$UPTIME${NC}"
     echo -e "  ${WHITE}CPU    : $(get_resource_bar $CPU_USAGE)   ${WHITE}RAM: $(get_resource_bar $RAM_PERC)${NC}"
     echo -e "${B_SEP}"
@@ -59,7 +66,7 @@ main_menu() {
     echo -e "  $(get_status 2096) ${GRAY}[07]${NC} Shadowsocks WS     $(get_status 7100) ${GRAY}[08]${NC} UDP Gaming"
     echo -e "${B_SEP}"
     echo -e "  ${ICON_SYS} ${YELLOW}══ GESTIÓN Y SISTEMA ══${NC}"
-    echo -e "  ${GRAY}[11]${NC} Mantenimiento       ${GRAY}[12]${NC} Gestión de Usuarios"
+    echo -e "  ${GRAY}[11]${NC} Mantenimiento (RAM) ${GRAY}[12]${NC} Gestión de Usuarios"
     echo -e "  ${GRAY}[13]${NC} Test de Velocidad   ${GRAY}[14]${NC} Gestor de Servicios"
     echo -e "  ${GRAY}[09]${NC} DNS Security        ${GRAY}[10]${NC} Dropbear Manager"
     echo -e "${B_SEP}"
@@ -79,7 +86,13 @@ main_menu() {
         8|08) bash "$SOURCE_DIR/scripts/KRAKER_UDP.sh" ;;
         9|09) bash "$SOURCE_DIR/scripts/KRAKER_DNS.sh" ;;
         10) bash "$SOURCE_DIR/scripts/KRAKER_Dropbear.sh" ;;
-        11) bash "$SOURCE_DIR/scripts/KRAKER_System.sh" ;;
+        11) 
+            echo -e "${YELLOW}[*] Liberando Memoria RAM y Limpiando Caché Master...${NC}"
+            clean_vps_ram
+            sleep 2
+            echo -e "${GREEN}✔ VPS Optimizada Corectamente.${NC}"
+            sleep 1
+            ;;
         12) bash "$SOURCE_DIR/scripts/KRAKER_User.sh" ;;
         13) 
             echo -e "${YELLOW}Ejecutando Test...${NC}"
@@ -92,12 +105,13 @@ main_menu() {
     esac
 }
 
-# Configuración Inicial (Permisos y Requisitos)
+# Configuración Inicial y Auto-Mantenimiento
 check_root
+setup_auto_clean
 chmod +x "$SOURCE_DIR/scripts"/*.sh 2>/dev/null
 chmod +x "$SOURCE_DIR/menu.sh"
 
-# Bucle Infinito
+# Bucle Principal
 while true; do
     main_menu
     echo -e "\n${YELLOW}Presione ENTER para volver al menú...${NC}"
