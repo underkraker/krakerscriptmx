@@ -146,40 +146,9 @@ get_active_ports() {
         ss -nulp | grep -q ":$p " && udp_show+="$p "
     done
     
-# Módulo de Banner Híbrido 🛡️🐲🚀
-setup_kraker_banner() {
-    local CUSTOM_MSG=$(cat /etc/kraker/.client_banner 2>/dev/null || echo "             𝙉𝙀𝙏𝙁𝙍𝙀𝙀 𝙇𝙏𝙈 𝙑𝙋𝙎 𝙈𝙄𝘼𝙈𝙄")
-    
-    # 🕵️ PIEZA FIJA: MASTER KRAKER (ASCII) 🛡️
-    cat << EOF > /etc/kraker_banner
-[$(date +%H:%M:%S)] Server Message:
-─────────────────────────────────────────────────────────────
-           🐲 Ｋ Ｒ Ａ Ｋ Ｅ Ｒ   Ｍ Ａ Ｓ Ｔ Ｅ Ｒ 🐲
-─────────────────────────────────────────────────────────────
-$CUSTOM_MSG
-─────────────────────────────────────────────────────────────
-EOF
-    
-    # Configurar SSH y SSL para usar este Banner
-    sed -i 's|^#Banner none|Banner /etc/kraker_banner|g' /etc/ssh/sshd_config
-    sed -i 's|^Banner.*|Banner /etc/kraker_banner|g' /etc/ssh/sshd_config
-    systemctl restart ssh > /dev/null 2>&1
-}
-
-update_client_message() {
-    msg_header "PERSONALIZAR BANNER DE CLIENTE"
-    echo -e "  ${YELLOW}Sugerencia: Usa negritas o emojis para que resalte.${NC}"
-    echo -e "${BARRA}"
-    echo -e -n "  ${CYAN}INGRESE SU NUEVO MENSAJE: ${NC}"
-    read nuevo_msg
-    if [[ ! -z "$nuevo_msg" ]]; then
-        mkdir -p /etc/kraker
-        echo "          $nuevo_msg" > /etc/kraker/.client_banner
-        setup_kraker_banner
-        echo -e "\n  ${GREEN}✔ Banner actualizado correctamente.${NC}"
-    else
-        echo -e "\n  ${RED}❌ Operación cancelada.${NC}"
-    fi
-    sleep 2
+    local output=""
+    [[ ! -z $tcp_show ]] && output+="${GREEN}TCP:${NC} $tcp_show "
+    [[ ! -z $udp_show ]] && output+="${MAGENTA}UDP:${NC} $udp_show "
+    echo -e "${output:-NINGUNO}"
 }
 

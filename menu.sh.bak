@@ -69,7 +69,6 @@ main_menu() {
     echo -e "  ${GRAY}[11]${NC} Mantenimiento (RAM) ${GRAY}[12]${NC} Gestión de Usuarios"
     echo -e "  ${GRAY}[13]${NC} Test de Velocidad   ${GRAY}[14]${NC} Gestor de Servicios"
     echo -e "  ${GRAY}[09]${NC} DNS Security        ${GRAY}[10]${NC} Dropbear Manager"
-    echo -e "  ${GRAY}[15]${NC} Banner De La App ✍️"
     echo -e "${B_SEP}"
     echo -e "                 ${RED}[00] SALIR DEL PANEL DE CONTROL${NC}"
     echo -e "${B_BOT}"
@@ -101,7 +100,6 @@ main_menu() {
             speedtest-cli
             ;;
         14) bash "$SOURCE_DIR/scripts/KRAKER_Services.sh" ;;
-        15) update_client_message ;;
         0|00) clear; echo -e "${GREEN}¡Hasta pronto!${NC}"; exit 0 ;;
         *) echo -e "${RED}Opción inválida!${NC}"; sleep 1 ;;
     esac
@@ -110,7 +108,6 @@ main_menu() {
 # Configuración Inicial y Auto-Mantenimiento
 check_root
 setup_auto_clean
-setup_kraker_banner
 chmod +x "$SOURCE_DIR/scripts"/*.sh 2>/dev/null
 chmod +x "$SOURCE_DIR/menu.sh"
 
