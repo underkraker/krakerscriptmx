@@ -76,5 +76,16 @@ echo -e "${GREEN}✔ INSTALACIÓN COMPLETADA EXITOSAMENTE${NC}"
 echo -e "${YELLOW}Escribe 'kraker' o 'menu' para abrir el panel.${NC}"
 echo -e "${CYAN}======================================================${NC}"
 
+# 🏎️ MOTOR DE SÚPER ACELERACIÓN MASTER 🐲🚀
+(
+    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_rmem=4096 87380 16777216" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_wmem=4096 65536 16777216" >> /etc/sysctl.conf
+    echo "net.core.somaxconn=65535" >> /etc/sysctl.conf
+    echo "net.core.netdev_max_backlog=65535" >> /etc/sysctl.conf
+    sysctl -p > /dev/null 2>&1
+) &
+
 sleep 1
 kraker
