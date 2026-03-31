@@ -145,7 +145,12 @@ get_active_ports() {
     for p in 443 53 5300 36712 7100 7200 7300; do
         ss -nulp | grep -q ":$p " && udp_show+="$p "
     done
-    
+    local output=""
+    [[ ! -z $tcp_show ]] && output+="${GREEN}TCP:${NC} $tcp_show "
+    [[ ! -z $udp_show ]] && output+="${MAGENTA}UDP:${NC} $udp_show "
+    echo -e "${output:-NINGUNO}"
+}
+
 # Módulo de Banner Híbrido 🛡️🐲🚀
 setup_kraker_banner() {
     local CUSTOM_MSG=$(cat /etc/kraker/.client_banner 2>/dev/null || echo "             𝙉𝙀𝙏𝙁𝙍𝙀𝙀 𝙇𝙏𝙈 𝙑𝙋𝙎 𝙈𝙄𝘼𝙈𝙄")
