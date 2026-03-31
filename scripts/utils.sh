@@ -165,10 +165,20 @@ $CUSTOM_MSG
 ─────────────────────────────────────────────────────────────
 EOF
     
-    # Configurar SSH y SSL para usar este Banner
+    # 1. Configurar SSH para usar este Banner
     sed -i 's|^#Banner none|Banner /etc/kraker_banner|g' /etc/ssh/sshd_config
     sed -i 's|^Banner.*|Banner /etc/kraker_banner|g' /etc/ssh/sshd_config
     systemctl restart ssh > /dev/null 2>&1
+    
+    # 2. Configurar Dropbear (Si existe)
+    if [[ -f /etc/default/dropbear ]]; then
+        sed -i 's|^DROPBEAR_BANNER=.*|DROPBEAR_BANNER="/etc/kraker_banner"|g' /etc/default/dropbear
+        # Si no existe la línea, la añadimos
+        if ! grep -q "DROPBEAR_BANNER" /etc/default/dropbear; then
+            echo 'DROPBEAR_BANNER="/etc/kraker_banner"' >> /etc/default/dropbear
+        fi
+        systemctl restart dropbear > /dev/null 2>&1
+    fi
 }
 
 update_client_message() {
