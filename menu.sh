@@ -47,8 +47,9 @@ fi
 
 # Menu Principal
 main_menu() {
+    local IP_EXT_BASE=$1
     msg_banner
-    IP_EXT=$(get_ip)
+    IP_EXT=${IP_EXT_BASE:-$(get_ip)}
     OS=$(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2 || echo "Linux VPS")
     UPTIME=$(uptime -p)
     CPU_USAGE=$(awk -v c="$(grep -c ^processor /proc/cpuinfo)" '{print ($1/c)*100}' /proc/loadavg | cut -d. -f1)
@@ -114,12 +115,16 @@ main_menu() {
 check_root
 setup_auto_clean
 setup_kraker_banner
+
+# Obtener IP Pública Una Sola Vez (Aceleración de CPU)
+IP_EXT=$(get_ip)
+
 chmod +x "$SOURCE_DIR/scripts"/*.sh 2>/dev/null
 chmod +x "$SOURCE_DIR/menu.sh"
 
 # Bucle Principal
 while true; do
-    main_menu
+    main_menu "$IP_EXT"
     echo -e "\n${YELLOW}Presione ENTER para volver al menú...${NC}"
     read
 done
