@@ -41,17 +41,25 @@ manage_service() {
 
     case $cmd in
         1) 
+           # Inicio Limpio: Primero asegurar que el puerto esté libre
+           [[ $type == "systemd" ]] && systemctl stop "$service" > /dev/null 2>&1
+           [[ ! -z $service ]] && pkill -9 -f "$service" > /dev/null 2>&1
+           
            [[ $type == "systemd" ]] && systemctl start "$service"
            [[ $type == "screen" ]] && echo -e "${YELLOW}Inicia el servicio desde su instalador (04).${NC}" && sleep 2
            [[ $type == "binary" ]] && echo -e "${YELLOW}Inicia el servicio desde su instalador (08).${NC}" && sleep 2
            ;;
         2) 
+           echo -e "${YELLOW}[*] Deteniendo de forma agresiva...${NC}"
            [[ $type == "systemd" ]] && systemctl stop "$service"
            [[ $type == "screen" ]] && screen -X -S "$service" quit > /dev/null 2>&1
-           [[ $type == "binary" ]] && pkill -f "$service"
-           fuser -k 443/tcp > /dev/null 2>&1 # Limpieza agresiva de puertos comunes
+           [[ ! -z $service ]] && pkill -9 -f "$service" > /dev/null 2>&1
+           # Limpieza Final de Puertos
+           fuser -k 443/tcp 80/tcp 442/tcp 8080/tcp > /dev/null 2>&1
            ;;
         3) 
+           echo -e "${YELLOW}[*] Reiniciando Master...${NC}"
+           pkill -9 -f "$service" > /dev/null 2>&1
            [[ $type == "systemd" ]] && systemctl restart "$service"
            ;;
         0) return ;;
