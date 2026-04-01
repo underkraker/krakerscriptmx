@@ -35,23 +35,29 @@ verify_license() {
        exit 1
     fi
     
-    # 🌐 3. Validar con el Bot (Puerto 8080 para Cloudflare/AWS)
-    echo -e "  ${CYAN}[*] Conectando con el Servidor Central...${NC}"
+    # Curl Master Optimizado: Ahora con 10s de margen para evitar fallos por Lag
+    echo -e "  ${CYAN}[*] Validando Licencia con el Servidor...${NC}"
+    RESPONSE=$(curl -s --connect-timeout 5 --max-time 10 "http://$LICENSE_DOMAIN:8080/api/validar?key=$USER_KEY")
     
-    # Curl optimizado: Puerto 8080 atraviesa firewalls mejor que el 5000.
-    RESPONSE=$(curl -s --connect-timeout 2 --max-time 4 "http://$LICENSE_DOMAIN:8080/api/validar?key=$USER_KEY")
-    STATUS=$(echo "$RESPONSE" | jq -r '.status')
+    # 🕵️ Verificación de Integridad de Respuesta
+    if [[ -z "$RESPONSE" ]]; then
+        echo -e "  ${RED}❌ Error: No hay respuesta del Servidor Central.${NC}"
+        echo -e "  ${YELLOW}[!] Intente de nuevo en unos segundos.${NC}"
+        exit 1
+    fi
+
+    STATUS=$(echo "$RESPONSE" | jq -r '.status' 2>/dev/null || echo "error")
     
     if [[ "$STATUS" == "success" ]]; then
-        OWNER=$(echo "$RESPONSE" | jq -r '.owner')
-        echo -e "  ${GREEN}✅ ACCESO CONCEDIDO: Bienvenido Maestro @$OWNER${NC}"
+        OWNER=$(echo "$RESPONSE" | jq -r '.owner' 2>/dev/null || echo "Desconocido")
+        echo -e "  ${GREEN}✅ ACCESO CONCEDIDO: Bienvenido @$OWNER${NC}"
         mkdir -p /etc/kraker
         echo "$USER_KEY" > /etc/kraker/.license
         sleep 2
         return 0
     else
-        echo -e "  ${RED}❌ ACCESO DENEGADO: Key Inválida o Expirada.${NC}"
-        echo -e "  ${YELLOW}[!] Contacta a @underkraker para adquirir soporte.${NC}"
+        echo -e "  ${RED}❌ ACCESO DENEGADO: Key Inválida, Usada o Expirada.${NC}"
+        echo -e "  ${YELLOW}[!] Soporte Oficial: @underkraker${NC}"
         echo -e "${BARRA}"
         exit 1
     fi
