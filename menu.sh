@@ -48,7 +48,7 @@ main_menu() {
     echo -e "  ${GRAY}[11]${NC} Mantenimiento (RAM) ${GRAY}[12]${NC} Gestión de Usuarios"
     echo -e "  ${GRAY}[13]${NC} Test de Velocidad   ${GRAY}[14]${NC} Gestor de Servicios"
     echo -e "  ${GRAY}[09]${NC} DNS Security        ${GRAY}[10]${NC} Dropbear Manager"
-    echo -e "  ${GRAY}[15]${NC} Banner De La App ✍️"
+    echo -e "  ${GRAY}[15]${NC} Banner De La App ✍️  ${GRAY}[20]${NC} DESINSTALAR PANEL 🧹"
     echo -e "${B_SEP}"
     echo -e "                 ${RED}[00] SALIR DEL PANEL DE CONTROL${NC}"
     echo -e "${B_BOT}"
@@ -81,6 +81,7 @@ main_menu() {
             ;;
         14) bash "$SOURCE_DIR/scripts/KRAKER_Services.sh" ;;
         15) update_client_message ;;
+        20) uninstall_panel ;;
         0|00) clear; echo -e "${GREEN}¡Hasta pronto!${NC}"; exit 0 ;;
         *) echo -e "${RED}Opción inválida!${NC}"; sleep 1 ;;
     esac

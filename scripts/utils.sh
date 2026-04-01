@@ -236,6 +236,42 @@ EOF
     systemctl enable xray > /dev/null 2>&1
 }
 
+uninstall_panel() {
+    clear
+    msg_banner
+    msg_header "UNINSTALLER - AGENTE DE LIMPIEZA KRAKER"
+    echo -e "  ${RED}[!] ADVERTENCIA: Se borrarán TODOS los protocolos y archivos.${NC}"
+    echo -e "  ${YELLOW}[?] ¿Está seguro que desea desinstalar? (s/n): ${NC}"
+    read confirm
+    [[ "$confirm" != "s" && "$confirm" != "S" ]] && return
+
+    echo -e "${YELLOW}[*] Deteniendo y eliminando servicios...${NC}"
+    # Detener todo
+    systemctl stop xray stunnel4 dropbear badvpn-udpgw 2>/dev/null
+    systemctl disable xray stunnel4 dropbear badvpn-udpgw 2>/dev/null
+    
+    # Limpiar Puertos
+    fuser -k 443/tcp 80/tcp 2083/tcp 2053/tcp 2096/tcp 8080/tcp > /dev/null 2>&1
+
+    # Eliminar Archivos y Binarios
+    rm -rf /usr/local/bin/xray /usr/local/etc/xray
+    rm -rf /etc/kraker /etc/kraker_banner /etc/kraker_xray /etc/kraker_vmess
+    rm -f /usr/bin/kraker /usr/bin/menu
+    rm -f /etc/systemd/system/xray.service
+    
+    # Limpiar Crontab
+    crontab -l | grep -v "kraker" | crontab -
+    
+    # Borrar la carpeta del proyecto
+    ROOT_DIR=$(dirname "$SOURCE_DIR")
+    rm -rf "$ROOT_DIR"
+
+    echo -e "${GREEN}✔ DESINSTALACIÓN COMPLETADA EXITOSAMENTE!${NC}"
+    echo -e "${CYAN}Gracias por usar KRAKER MASTER. Hasta la próxima!${NC}"
+    sleep 3
+    exit 0
+}
+
 update_client_message() {
     msg_header "PERSONALIZAR BANNER DE CLIENTE"
     echo -e "  ${YELLOW}Sugerencia: Usa negritas o emojis para que resalte.${NC}"
