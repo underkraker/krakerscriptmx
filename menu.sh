@@ -8,34 +8,6 @@ SOURCE_PATH=$(readlink -f "$0")
 SOURCE_DIR=$(dirname "$SOURCE_PATH")
 [[ -f "$SOURCE_DIR/scripts/utils.sh" ]] && source "$SOURCE_DIR/scripts/utils.sh" || { echo "Error: utils.sh no encontrado."; exit 1; }
 
-# Monitor de Sistema Real-Time
-sys_stats() {
-    IP_EXT=$(get_ip)
-    OS=$(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2 || echo "Linux VPS")
-    
-    # Cálculos de Recursos
-    RAM_TOTAL=$(free -m | awk '/Mem:/ { print $2 }')
-    RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
-    RAM_PERC=$(( RAM_USED * 100 / RAM_TOTAL ))
-    
-    # Optimización Master: Usar loadavg (Ultra Ligero) en lugar de top
-    CPU_USAGE=$(awk '{print $1 * 100 / 4}' /proc/loadavg | cut -d. -f1) # Basado en 4 núcleos (Promedio)
-    # Si quieres una lectura exacta por núcleos detectados:
-    CPUS=$(grep -c ^processor /proc/cpuinfo)
-    CPU_USAGE=$(awk -v c="$CPUS" '{print ($1/c)*100}' /proc/loadavg | cut -d. -f1)
-    [[ -z $CPU_USAGE ]] && CPU_USAGE=0
-
-    UPTIME=$(uptime -p)
-    ACTIVE_PORTS=$(get_active_ports)
-
-    echo -e "  ${WHITE}IP PÚBLICA    : ${GREEN}$IP_EXT${NC}          ${WHITE}SISTEMA : ${GREEN}$OS${NC}"
-    echo -e "  ${WHITE}UPTIME        : ${GREEN}$UPTIME${NC}"
-    echo -e "  ${WHITE}MEMORIA RAM   : $(get_resource_bar $RAM_PERC) ${WHITE}($RAM_USED / $RAM_TOTAL MB)${NC}"
-    echo -e "  ${WHITE}CARGA CPU     : $(get_resource_bar $CPU_USAGE)${NC}"
-    echo -e "  ${WHITE}PUERTOS ACTIVOS: ${CYAN}${ACTIVE_PORTS:-NINGUNO}${NC}"
-    echo -e "${BARRA}"
-}
-
 # Manejo de Argumentos (Auto-Mantenimiento Master)
 if [[ "$1" == "--ram-clean" ]]; then
     clean_vps_ram
@@ -47,20 +19,23 @@ fi
 
 # Menu Principal
 main_menu() {
-    local IP_EXT_BASE=$1
+    local IP=$1
+    local OS_SYS=$2
     msg_banner
-    IP_EXT=${IP_EXT_BASE:-$(get_ip)}
-    OS=$(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2 || echo "Linux VPS")
+    
+    # Recursos (Una sola lectura por refresco)
+    CPUS=$(grep -c ^processor /proc/cpuinfo)
     UPTIME=$(uptime -p)
-    CPU_USAGE=$(awk -v c="$(grep -c ^processor /proc/cpuinfo)" '{print ($1/c)*100}' /proc/loadavg | cut -d. -f1)
-    RAM_TOTAL=$(free -m | awk '/Mem:/ { print $2 }')
-    RAM_USED=$(free -m | awk '/Mem:/ { print $3 }')
+    CPU_USAGE=$(awk -v c="$CPUS" '{print ($1/c)*100}' /proc/loadavg | cut -d. -f1)
+    MEM_STATS=($(free -m | awk '/Mem:/ { print $2, $3 }'))
+    RAM_TOTAL=${MEM_STATS[0]}
+    RAM_USED=${MEM_STATS[1]}
     RAM_PERC=$(( RAM_USED * 100 / RAM_TOTAL ))
     USERS=$(get_active_users)
 
     echo -e "${B_TOP}"
-    echo -e "  ${WHITE}SISTEMA: ${GREEN}$OS${NC}   ${WHITE}USERS: ${GREEN}$USERS${NC}"
-    echo -e "  ${WHITE}IP PUB : ${CYAN}$IP_EXT${NC}   ${WHITE}UPTIME: ${GREEN}$UPTIME${NC}"
+    echo -e "  ${WHITE}SISTEMA: ${GREEN}$OS_SYS${NC}   ${WHITE}USERS: ${GREEN}$USERS${NC}"
+    echo -e "  ${WHITE}IP PUB : ${CYAN}$IP${NC}   ${WHITE}UPTIME: ${GREEN}$UPTIME${NC}"
     echo -e "  ${WHITE}CPU    : $(get_resource_bar $CPU_USAGE)   ${WHITE}RAM: $(get_resource_bar $RAM_PERC)${NC}"
     echo -e "${B_SEP}"
     echo -e "  ${ICON_XRAY} ${CYAN}══ PROTOS XRAY (TCP/WS) ══${NC}      ${ICON_V2} ${MAGENTA}══ UDP & TUNNELS ══${NC}"
@@ -116,15 +91,15 @@ check_root
 setup_auto_clean
 setup_kraker_banner
 
-# Obtener IP Pública Una Sola Vez (Aceleración de CPU)
+# 🛰️ Detección Maestro Única (Aceleración de Inicio)
 IP_EXT=$(get_ip)
-
+OS=$(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2 || echo "Linux VPS")
 chmod +x "$SOURCE_DIR/scripts"/*.sh 2>/dev/null
 chmod +x "$SOURCE_DIR/menu.sh"
 
 # Bucle Principal
 while true; do
-    main_menu "$IP_EXT"
+    main_menu "$IP_EXT" "$OS"
     echo -e "\n${YELLOW}Presione ENTER para volver al menú...${NC}"
     read
 done
