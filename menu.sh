@@ -49,7 +49,7 @@ main_menu() {
     echo -e "  ${GRAY}[15]${NC} Banner De La App ✍️  ${CYAN}[16]${NC} Acelerador BBR 🚀"
     echo -e "  ${GRAY}[20]${NC} DESINSTALAR PANEL 🧹"
     echo -e "${B_SEP}"
-    echo -e "          ${RED}[00] SALIR DEL PANEL DE CONTROL${NC}"
+    echo -e "                 ${RED}[00] SALIR DEL PANEL DE CONTROL${NC}"
     echo -e "${B_BOT}"
     echo -en "  ${CYAN}SELECCIONE UNA OPCIÓN: ${NC}"
     read opt
