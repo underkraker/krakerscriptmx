@@ -170,11 +170,12 @@ setup_kraker_banner() {
     
     # 🕵️ PIEZA FIJA: MASTER KRAKER (ASCII) 🛡️
     cat << EOF > /etc/kraker_banner
-[$(date +%H:%M:%S)] SERVER INJECTED LOG
  
-         🐲 Ｋ Ｒ Ａ Ｋ Ｅ Ｒ   Ｍ Ａ Ｓ Ｔ Ｅ Ｒ 🐲
- 
-   ✨ $CUSTOM_MSG ✨
+ ╭─────────────────────────╮
+ │    🔥 K R A K E R 🔥    │
+ │     M A S T E R       │
+ ╰─────────────────────────╯
+    🚀 $CUSTOM_MSG 🚀
  
 EOF
     
