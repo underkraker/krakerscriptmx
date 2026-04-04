@@ -38,11 +38,9 @@ main_menu() {
     echo -e "  ${WHITE}IP PUB : ${CYAN}$IP${NC}   ${WHITE}UPTIME: ${GREEN}$UPTIME${NC}"
     echo -e "  ${WHITE}CPU    : $(get_resource_bar $CPU_USAGE)   ${WHITE}RAM: $(get_resource_bar $RAM_PERC)${NC}"
     echo -e "${B_SEP}"
-    echo -e "  ${ICON_XRAY} ${CYAN}══ PROTOS XRAY (TCP/WS) ══${NC}      ${ICON_V2} ${MAGENTA}══ UDP & TUNNELS ══${NC}"
-    echo -e "  $(get_status 443) ${GRAY}[01]${NC} Xray Reality       $(get_status 443) ${GRAY}[02]${NC} Hysteria v1/v2"
-    echo -e "  $(get_status 2083) ${GRAY}[05]${NC} VMess WS+TLS       $(get_status 442) ${GRAY}[03]${NC} VPN SSL (Stunnel)"
-    echo -e "  $(get_status 2053) ${GRAY}[06]${NC} Trojan WS+TLS      $(get_status 443) ${GRAY}[04]${NC} SSL Gateway (Py)"
-    echo -e "  $(get_status 2096) ${GRAY}[07]${NC} Shadowsocks WS     $(get_status 7100) ${GRAY}[08]${NC} UDP Gaming"
+    echo -e "  ${ICON_V2} ${CYAN}══ PROTOCOLOS & TUNNELS ══${NC}"
+    echo -e "  $(get_status 442) ${GRAY}[03]${NC} VPN SSL (Stunnel)  $(get_status 443) ${GRAY}[04]${NC} Gateway Nativo"
+    echo -e "  $(get_status 7100) ${GRAY}[08]${NC} UDP Gaming"
     echo -e "${B_SEP}"
     echo -e "  ${ICON_SYS} ${YELLOW}══ GESTIÓN Y SISTEMA ══${NC}"
     echo -e "  ${GRAY}[11]${NC} Mantenimiento (RAM) ${GRAY}[12]${NC} Gestión de Usuarios"
@@ -56,13 +54,8 @@ main_menu() {
     read opt
 
     case $opt in
-        1|01) bash "$SOURCE_DIR/scripts/Xray_Reality.sh" ;;
-        2|02) bash "$SOURCE_DIR/scripts/Hysteria_v2.sh" ;;
         3|03) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
         4|04) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
-        5|05) bash "$SOURCE_DIR/scripts/KRAKER_VMess.sh" ;;
-        6|06) bash "$SOURCE_DIR/scripts/KRAKER_Trojan.sh" ;;
-        7|07) bash "$SOURCE_DIR/scripts/KRAKER_Shadowsocks.sh" ;;
         8|08) bash "$SOURCE_DIR/scripts/KRAKER_UDP.sh" ;;
         9|09) bash "$SOURCE_DIR/scripts/KRAKER_DNS.sh" ;;
         10) bash "$SOURCE_DIR/scripts/KRAKER_Dropbear.sh" ;;

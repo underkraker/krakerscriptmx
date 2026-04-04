@@ -21,8 +21,6 @@ check_and_restart() {
 
 # --- Guardian Master List ---
 
-# 1. Xray (VLESS, VMess, Trojan, Reality)
-check_and_restart "Xray-core" "pgrep -x xray" "systemctl restart xray"
 
 # 2. Dropbear
 check_and_restart "Dropbear" "pgrep -x dropbear" "systemctl restart dropbear"
