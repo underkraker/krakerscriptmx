@@ -170,12 +170,12 @@ setup_kraker_banner() {
     
     # 🕵️ PIEZA FIJA: MASTER KRAKER (ASCII) 🛡️
     cat << EOF > /etc/kraker_banner
-[$(date +%H:%M:%S)] Server Message:
-─────────────────────────────────────────────────────────────
-           🐲 Ｋ Ｒ Ａ Ｋ Ｅ Ｒ   Ｍ Ａ Ｓ Ｔ Ｅ Ｒ 🐲
-─────────────────────────────────────────────────────────────
-$CUSTOM_MSG
-─────────────────────────────────────────────────────────────
+[$(date +%H:%M:%S)] SERVER INJECTED LOG
+ 
+         🐲 Ｋ Ｒ Ａ Ｋ Ｅ Ｒ   Ｍ Ａ Ｓ Ｔ Ｅ Ｒ 🐲
+ 
+   ✨ $CUSTOM_MSG ✨
+ 
 EOF
     
     # 1. Configurar SSH para usar este Banner
