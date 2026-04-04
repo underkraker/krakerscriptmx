@@ -168,15 +168,14 @@ get_active_ports() {
 setup_kraker_banner() {
     local CUSTOM_MSG=$(cat /etc/kraker/.client_banner 2>/dev/null || echo "             𝙉𝙀𝙏𝙁𝙍𝙀𝙀 𝙇𝙏𝙈 𝙑𝙋𝙎 𝙈𝙄𝘼𝙈𝙄")
     
-    # 🕵️ PIEZA FIJA: MASTER KRAKER (ASCII) 🛡️
     cat << EOF > /etc/kraker_banner
- 
- ╭─────────────────────────╮
- │    🔥 K R A K E R 🔥    │
- │     M A S T E R       │
- ╰─────────────────────────╯
-    🚀 $CUSTOM_MSG 🚀
- 
+<br>
+<center>
+<b><font color="red">🔥 K R A K E R 🔥</font></b>
+<b><font color="white">M A S T E R</font></b>
+<b><font color="yellow">🚀 $CUSTOM_MSG 🚀</font></b>
+</center>
+<br>
 EOF
     
     # 1. Configurar SSH para usar este Banner
