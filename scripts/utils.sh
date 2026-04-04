@@ -183,12 +183,13 @@ EOF
     sed -i 's|^Banner.*|Banner /etc/kraker_banner|g' /etc/ssh/sshd_config
     systemctl restart ssh > /dev/null 2>&1
     
-    # 2. Configurar Dropbear (Si existe)
+    # 2. Configurar Dropbear (Resolución del bug en Ubuntu 24.04+)
     if [[ -f /etc/default/dropbear ]]; then
         sed -i 's|^DROPBEAR_BANNER=.*|DROPBEAR_BANNER="/etc/kraker_banner"|g' /etc/default/dropbear
-        # Si no existe la línea, la añadimos
-        if ! grep -q "DROPBEAR_BANNER" /etc/default/dropbear; then
-            echo 'DROPBEAR_BANNER="/etc/kraker_banner"' >> /etc/default/dropbear
+        # Ubuntu 24.04 a veces ignora DROPBEAR_BANNER, inyectamos '-b' en EXTRA_ARGS directamente si no existe
+        if grep -q "DROPBEAR_EXTRA_ARGS=" /etc/default/dropbear && ! grep -q "\-b /etc/kraker_banner" /etc/default/dropbear; then
+            sed -i 's|DROPBEAR_EXTRA_ARGS="\(.*\)"|DROPBEAR_EXTRA_ARGS="\1 -b /etc/kraker_banner"|g' /etc/default/dropbear
+            sed -i "s|DROPBEAR_EXTRA_ARGS='\(.*\)'|DROPBEAR_EXTRA_ARGS='\1 -b /etc/kraker_banner'|g" /etc/default/dropbear
         fi
         systemctl restart dropbear > /dev/null 2>&1
     fi
