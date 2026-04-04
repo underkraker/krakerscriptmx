@@ -30,19 +30,18 @@ check_and_restart "Dropbear" "pgrep -x dropbear" "systemctl restart dropbear"
 # 3. OpenSSH
 check_and_restart "SSH Server" "pgrep -x sshd" "systemctl restart ssh"
 
-# 4. KRAKER SSL Gateway (Python)
-# El gateway corre bajo 'python3 KRAKER_SSL_Gateway.py'
-if screen -list | grep -q "SSL_Gateway"; then
-    : # OK
-else
-    # Si no está en screen, intentamos restaurar desde las variables guardadas
-    # NOTA: El script instalador de SSL guarda los datos en /etc/ws_ssl/config
-    if [[ -f "/etc/ws_ssl/config" ]]; then
-        source "/etc/ws_ssl/config"
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [!] GATEWAY SSL CAÍDO. Restaurando..." >> $LOG_FILE
-        screen -dmS SSL_Gateway python3 "$SOURCE_DIR/KRAKER_SSL_Gateway.py" "$LPORT" "/etc/ws_ssl/server.crt" "/etc/ws_ssl/server.key" "127.0.0.1" "$BPORT"
-    fi
-fi
+# 4. KRAKER SSL Gateway (Stunnel4 Nativo)
+# El gateway en Python fue desactivado por baja velocidad (conservado comentado abajo)
+# if screen -list | grep -q "SSL_Gateway"; then
+#     : # OK
+# else
+#     if [[ -f "/etc/ws_ssl/config" ]]; then
+#         source "/etc/ws_ssl/config"
+#         echo "[$(date '+%Y-%m-%d %H:%M:%S')] [!] GATEWAY SSL CAÍDO. Restaurando..." >> $LOG_FILE
+#         screen -dmS SSL_Gateway python3 "$SOURCE_DIR/KRAKER_SSL_Gateway.py" "$LPORT" "/etc/ws_ssl/server.crt" "/etc/ws_ssl/server.key" "127.0.0.1" "$BPORT"
+#     fi
+# fi
+check_and_restart "Stunnel4 SSL Gateway" "pgrep -x stunnel4" "stunnel4 /etc/stunnel/kraker.conf"
 
 # 5. BadVPN (UDP Gaming) - Modern Systemd Monitoring
 if systemctl is-active --quiet kraker-udp; then

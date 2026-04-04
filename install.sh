@@ -45,11 +45,7 @@ if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null; then
     apt-get install -y curl jq wget git > /dev/null 2>&1
 fi
 
-TEMP_SHIELD="/tmp/KRAKER_Shield.sh"
-wget -qO "$TEMP_SHIELD" "https://raw.githubusercontent.com/underkraker/krakerscriptmx/main/scripts/KRAKER_Shield.sh"
-source "$TEMP_SHIELD"
-show_progress 1 "Autenticando Key..." 45
-verify_license || { echo -e "\n${RED}[!] Error en la verificación.${NC}"; exit 1; }
+show_progress 1 "Instalación Libre Activada..." 45
 
 # Install Dependencies
 show_progress 1 "Instalando Componentes..." 65
@@ -77,15 +73,23 @@ echo -e "${YELLOW}Escribe 'kraker' o 'menu' para abrir el panel.${NC}"
 echo -e "${CYAN}======================================================${NC}"
 
 # 🏎️ MOTOR DE SÚPER ACELERACIÓN MASTER 🐲🚀
-(
-    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-    echo "net.ipv4.tcp_rmem=4096 87380 16777216" >> /etc/sysctl.conf
-    echo "net.ipv4.tcp_wmem=4096 65536 16777216" >> /etc/sysctl.conf
-    echo "net.core.somaxconn=65535" >> /etc/sysctl.conf
-    echo "net.core.netdev_max_backlog=65535" >> /etc/sysctl.conf
-    sysctl -p > /dev/null 2>&1
-) &
+modprobe tcp_bbr > /dev/null 2>&1
+echo "tcp_bbr" > /etc/modules-load.d/bbr.conf 2>/dev/null
+sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+sed -i '/net.ipv4.tcp_rmem/d' /etc/sysctl.conf
+sed -i '/net.ipv4.tcp_wmem/d' /etc/sysctl.conf
+sed -i '/net.core.somaxconn/d' /etc/sysctl.conf
+sed -i '/net.core.netdev_max_backlog/d' /etc/sysctl.conf
+cat <<EOF >> /etc/sysctl.conf
+net.core.default_qdisc=fq
+net.ipv4.tcp_congestion_control=bbr
+net.ipv4.tcp_rmem=4096 87380 16777216
+net.ipv4.tcp_wmem=4096 65536 16777216
+net.core.somaxconn=65535
+net.core.netdev_max_backlog=65535
+EOF
+sysctl -p > /dev/null 2>&1
 
 sleep 1
 kraker

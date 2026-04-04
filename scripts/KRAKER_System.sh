@@ -12,6 +12,10 @@ enable_bbr() {
         echo -e "${GREEN}[✔] TCP BBR ya está activado y funcionando.${NC}"
     else
         echo -e "${YELLOW}[*] Activando TCP BBR para mayor velocidad...${NC}"
+        modprobe tcp_bbr > /dev/null 2>&1
+        echo "tcp_bbr" > /etc/modules-load.d/bbr.conf 2>/dev/null
+        sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+        sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
         echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
         echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
         sysctl -p > /dev/null 2>&1

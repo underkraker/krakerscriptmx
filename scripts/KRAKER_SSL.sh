@@ -52,8 +52,26 @@ setup_protocol() {
     mkdir -p /etc/ws_ssl
     openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/ws_ssl/server.key -out /etc/ws_ssl/server.crt -subj "/CN=$BUG" -days 365 2>/dev/null
     
-    # 4. Iniciar Python Gateway en segundo plano
-    screen -dmS "kraker_ssl" python3 "$SOURCE_DIR/KRAKER_SSL_Gateway.py" "443" "/etc/ws_ssl/server.crt" "/etc/ws_ssl/server.key" "127.0.0.1" "$TARGET_PORT"
+    # (Desactivado) 4. Iniciar Python Gateway en segundo plano
+    # screen -dmS "kraker_ssl" python3 "$SOURCE_DIR/KRAKER_SSL_Gateway.py" "443" "/etc/ws_ssl/server.crt" "/etc/ws_ssl/server.key" "127.0.0.1" "$TARGET_PORT"
+    
+    # 4. Iniciar Stunnel4 Nativo (Alta Velocidad)
+    echo -e "${YELLOW}[*] Configurando Stunnel4 Nativo...${NC}"
+    mkdir -p /etc/stunnel
+    cat <<EOF > /etc/stunnel/kraker.conf
+pid = /var/run/stunnel-kraker.pid
+cert = /etc/ws_ssl/server.crt
+key = /etc/ws_ssl/server.key
+client = no
+socket = a:SO_REUSEADDR=1
+socket = l:TCP_NODELAY=1
+socket = r:TCP_NODELAY=1
+
+[kraker_ssl]
+accept = 443
+connect = 127.0.0.1:$TARGET_PORT
+EOF
+    stunnel4 /etc/stunnel/kraker.conf
     
     sleep 2
     if netstat -tunlp | grep -q ":443 "; then
@@ -68,9 +86,14 @@ setup_protocol() {
 
 stop_protocol() {
     msg_header "SSL GATEWAY STOP"
-    screen -X -S "kraker_ssl" quit > /dev/null 2>&1
+    # screen -X -S "kraker_ssl" quit > /dev/null 2>&1
+    if [ -f /var/run/stunnel-kraker.pid ]; then
+        kill $(cat /var/run/stunnel-kraker.pid) > /dev/null 2>&1
+        rm -f /var/run/stunnel-kraker.pid
+    fi
+    killall stunnel4 > /dev/null 2>&1
     fuser -k 443/tcp > /dev/null 2>&1
-    echo -e "${GREEN}[*] Servicio KRAKER SSL detenido.${NC}"
+    echo -e "${GREEN}[✔] Servicio KRAKER SSL detenido.${NC}"
     sleep 2
 }
 
@@ -92,5 +115,5 @@ menu() {
 }
 
 # Install Deps
-install_deps screen openssl net-tools psmisc python3
+install_deps screen openssl net-tools psmisc python3 stunnel4
 menu
