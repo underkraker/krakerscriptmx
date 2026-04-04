@@ -56,11 +56,14 @@ cat <<EOF > /usr/bin/kraker_duckdns
 echo url="https://www.duckdns.org/update?domains=$DUCK_DOMAIN&token=$DUCK_TOKEN&ip=" | curl -k -K -
 EOF
 chmod +x /usr/bin/kraker_duckdns
+crontab -l 2>/dev/null | grep -v "kraker_duckdns" | crontab -
 (crontab -l 2>/dev/null; echo "*/5 * * * * /usr/bin/kraker_duckdns >/dev/null 2>&1") | crontab -
 /usr/bin/kraker_duckdns # Primera actualización
 
 # 🚀 Iniciar el Bot en Pantalla (Screen)
 echo -e "${YELLOW}[*] Iniciando el Bot en modo persistente (Screen)...${NC}"
+pkill -f "python3.*bot\.py" >/dev/null 2>&1
+screen -X -S master_bot quit >/dev/null 2>&1
 screen -dmS master_bot python3 "$BOT_DIR/bot.py"
 
 # Fin del Proceso
