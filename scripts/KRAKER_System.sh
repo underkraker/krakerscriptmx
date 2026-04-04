@@ -135,9 +135,11 @@ menu() {
     esac
 }
 
-# Soporte para ejecución vía cron
+# Soporte para ejecución vía cron o línea de comandos
 if [[ "$1" == "auto_clean" ]]; then
     auto_clean_users
+elif [[ "$1" == "enable_bbr" ]]; then
+    enable_bbr
 else
     menu
 fi
