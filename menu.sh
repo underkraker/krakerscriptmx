@@ -47,7 +47,8 @@ main_menu() {
     echo -e "  ${GRAY}[13]${NC} Test de Velocidad   ${GRAY}[14]${NC} Gestor de Servicios"
     echo -e "  ${GRAY}[09]${NC} Activar SlowDNS 🐢   ${GRAY}[10]${NC} Dropbear Manager"
     echo -e "  ${CYAN}[02]${NC} Escudo Fail2Ban 🛡️  ${CYAN}[05]${NC} Anti-MultiLogin 🚫"
-    echo -e "  ${GRAY}[15]${NC} Banner De La App ✍️  ${CYAN}[16]${NC} Acelerador BBR 🚀"
+    echo -e "  ${RED}[06]${NC} Anti-Torrent P2P ⛔  ${CYAN}[16]${NC} Acelerador BBR 🚀"
+    echo -e "  ${GRAY}[15]${NC} Banner De La App ✍️"
     echo -e "  ${GRAY}[20]${NC} DESINSTALAR PANEL 🧹"
     echo -e "${B_SEP}"
     echo -e "                 ${RED}[00] SALIR DEL PANEL DE CONTROL${NC}"
@@ -60,6 +61,7 @@ main_menu() {
         3|03) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
         4|04) bash "$SOURCE_DIR/scripts/KRAKER_SSL.sh" ;;
         5|05) bash "$SOURCE_DIR/scripts/KRAKER_AntiMulti.sh" ;;
+        6|06) bash "$SOURCE_DIR/scripts/KRAKER_TorrentBlock.sh" ;;
         8|08) bash "$SOURCE_DIR/scripts/KRAKER_UDP.sh" ;;
         9|09) bash "$SOURCE_DIR/scripts/KRAKER_DNS.sh" ;;
         10) bash "$SOURCE_DIR/scripts/KRAKER_Dropbear.sh" ;;

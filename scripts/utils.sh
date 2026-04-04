@@ -138,6 +138,10 @@ setup_auto_clean() {
     if ! crontab -l | grep -q "purge_ghost_sessions"; then
         (crontab -l 2>/dev/null; echo "*/30 * * * * /usr/bin/kraker --cpu-clean > /dev/null 2>&1") | crontab -
     fi
+    # Programar Bloqueo y Destrucción de Cuentas Expiradas (Diario 06:00 AM)
+    if ! crontab -l | grep -q "auto_clean"; then
+        (crontab -l 2>/dev/null; echo "0 6 * * * /usr/bin/bash /etc/kraker/scripts/KRAKER_System.sh auto_clean > /dev/null 2>&1") | crontab -
+    fi
 }
 
 get_active_users() {

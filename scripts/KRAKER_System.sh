@@ -40,14 +40,10 @@ auto_clean_users() {
     while IFS='|' read -r user pass exp uuid limit; do
         exp_ts=$(date -d "$exp" +%s 2>/dev/null)
         if [[ $current_ts -gt $exp_ts ]]; then
-            echo -e "${RED}[-] Usuario expirado: $user ($exp). Eliminando...${NC}"
+            echo -e "${RED}[-] Usuario expirado: $user ($exp). Eliminando y bloqueando...${NC}"
+            pkill -u "$user" 2>/dev/null
             userdel -f $user > /dev/null 2>&1
             sed -i "/$user hard maxlogins/d" /etc/security/limits.conf > /dev/null 2>&1
-            
-            # Limpiar Xray
-            if [[ -f $XRAY_CONF ]]; then
-                jq --arg email "$user" '(.inbounds[].settings.clients) |= map(select(.email != $email))' $XRAY_CONF > ${XRAY_CONF}.tmp && mv ${XRAY_CONF}.tmp $XRAY_CONF
-            fi
             ((count++))
         else
             echo "$user|$pass|$exp|$uuid|$limit" >> $temp_db
@@ -55,9 +51,8 @@ auto_clean_users() {
     done < $USER_DB
 
     mv $temp_db $USER_DB
-    [[ $count -gt 0 ]] && systemctl restart xray > /dev/null 2>&1
     
-    echo -e "${GREEN}[✔] Limpieza completada. Cuentas eliminadas: $count${NC}"
+    echo -e "${GREEN}[✔] Limpieza sistemática completada. Cuentas eliminadas: $count${NC}"
     sleep 2
 }
 
